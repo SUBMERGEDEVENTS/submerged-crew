@@ -578,7 +578,7 @@ async function socialLogin(service) {
 
   const { data, error } = await sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: 'https://submergedevents.github.io/submerged-crew' }
   });
 
   if (error) {
