@@ -657,7 +657,41 @@ async function doLogout() {
 async function loadRep() {
   const { data } = await sb.from('reps').select('*').eq('user_id', currentUser.id).single();
   currentRep = data;
-  if (!currentRep) { showScreen('login'); return; }
+
+  // No rep profile yet — auto-create from OAuth metadata (Spotify login)
+  if (!currentRep) {
+    const meta = currentUser.user_metadata || {};
+    // Pull name from Spotify metadata — falls back to email username
+    const fullName = meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'New Rep';
+    const parts = fullName.trim().split(' ');
+    const first = parts[0] || 'Rep';
+    const last = parts[1] || '';
+
+    // Auto-generate promo code: first 4 letters + 2 random digits
+    const base = (first.substring(0,4) + Math.floor(10+Math.random()*89)).toUpperCase().replace(/[^A-Z0-9]/g,'');
+
+    // Auto-connect Spotify since they just logged in with it
+    const { data: newRep, error } = await sb.from('reps').insert({
+      user_id: currentUser.id,
+      name: fullName,
+      email: currentUser.email || '',
+      promo_code: base,
+      rank: 'Recruit',
+      lifetime_points: 0,
+      spotify_connected: true
+    }).select().single();
+
+    if (error) {
+      console.error('Failed to create rep profile:', error);
+      showScreen('login');
+      return;
+    }
+    currentRep = newRep;
+
+    // Auto-connect Spotify in music state
+    musicConnected['spotify'] = true;
+  }
+
   renderHeader();
   await Promise.all([loadStats(), loadEvents()]);
 }
