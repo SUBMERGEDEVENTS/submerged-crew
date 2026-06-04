@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Supabase Test</title>
+</head>
+<body style="background:#0d1b2e;color:white;font-family:sans-serif;padding:2rem;text-align:center;">
+
+<h2 id="status">Testing Supabase connection...</h2>
+<p id="detail" style="color:#aaa;margin-top:1rem;"></p>
+<button id="spotify-btn" onclick="testSpotify()" style="display:none;margin-top:2rem;padding:14px 28px;background:#1DB954;color:black;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">
+  Test Spotify Login
+</button>
+<button id="email-btn" onclick="testEmail()" style="display:none;margin-top:1rem;padding:14px 28px;background:#00D4C8;color:#0d1b2e;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">
+  Test Email Login
+</button>
+
+<div id="email-form" style="display:none;margin-top:2rem;">
+  <input id="em" type="email" placeholder="email" style="padding:10px;margin:5px;border-radius:6px;border:none;font-size:14px;"><br>
+  <input id="pw" type="password" placeholder="password" style="padding:10px;margin:5px;border-radius:6px;border:none;font-size:14px;"><br>
+  <button onclick="doEmailLogin()" style="margin-top:10px;padding:12px 24px;background:#00D4C8;color:#0d1b2e;border:none;border-radius:6px;font-size:14px;font-weight:800;cursor:pointer;">Sign In</button>
+  <button onclick="doEmailSignup()" style="margin-top:10px;margin-left:8px;padding:12px 24px;background:#333;color:white;border:1px solid #555;border-radius:6px;font-size:14px;font-weight:800;cursor:pointer;">Sign Up</button>
+</div>
+
+<div id="result" style="margin-top:2rem;padding:1rem;background:#1e2a3d;border-radius:8px;text-align:left;display:none;font-size:13px;word-break:break-all;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
+
+function log(msg, color) {
+  var r = document.getElementById('result');
+  r.style.display = 'block';
+  r.innerHTML += '<div style="color:'+(color||'#aaa')+';margin-bottom:6px;">' + msg + '</div>';
+}
+
+window.onload = async function() {
+  // Test 1: Did Supabase library load?
+  if (typeof supabase === 'undefined') {
+    document.getElementById('status').textContent = '❌ Supabase library failed to load';
+    document.getElementById('detail').textContent = 'CDN is being blocked. Check your network or browser extensions.';
+    return;
+  }
+  log('✅ Supabase library loaded', '#22c55e');
+
+  // Test 2: Can we create a client?
+  let sb;
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    log('✅ Supabase client created', '#22c55e');
+  } catch(e) {
+    document.getElementById('status').textContent = '❌ Failed to create Supabase client';
+    log('Error: ' + e.message, '#f87171');
+    return;
+  }
+
+  // Test 3: Can we reach Supabase?
+  try {
+    const { data, error } = await sb.from('events').select('name').limit(1);
+    if (error) {
+      log('⚠️ DB query error: ' + error.message, '#f0b429');
+    } else {
+      log('✅ Database reachable — events table found', '#22c55e');
+    }
+  } catch(e) {
+    log('❌ Network error reaching Supabase: ' + e.message, '#f87171');
+  }
+
+  // Test 4: Auth session
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      log('✅ Already logged in as: ' + (session.user.email || session.user.id), '#22c55e');
+    } else {
+      log('ℹ️ No active session — not logged in', '#aaa');
+    }
+  } catch(e) {
+    log('❌ Auth error: ' + e.message, '#f87171');
+  }
+
+  document.getElementById('status').textContent = '✅ Supabase connection working';
+  document.getElementById('detail').textContent = 'All systems go — test login below';
+  document.getElementById('spotify-btn').style.display = 'inline-block';
+  document.getElementById('email-btn').style.display = 'inline-block';
+
+  window._sb = sb;
+};
+
+function testSpotify() {
+  log('🔄 Initiating Spotify OAuth...', '#1DB954');
+  window._sb.auth.signInWithOAuth({
+    provider: 'spotify',
+    options: { redirectTo: 'https://submergedevents.github.io/submerged-crew' }
+  }).then(function(res) {
+    if (res.error) {
+      log('❌ Spotify error: ' + res.error.message, '#f87171');
+    } else {
+      log('✅ Redirecting to Spotify...', '#1DB954');
+    }
+  });
+}
+
+function testEmail() {
+  document.getElementById('email-form').style.display = 'block';
+}
+
+function doEmailLogin() {
+  var em = document.getElementById('em').value;
+  var pw = document.getElementById('pw').value;
+  log('🔄 Trying email login...', '#00D4C8');
+  window._sb.auth.signInWithPassword({ email: em, password: pw }).then(function(res) {
+    if (res.error) {
+      log('❌ Login error: ' + res.error.message, '#f87171');
+    } else {
+      log('✅ Logged in as: ' + res.data.user.email, '#22c55e');
+    }
+  });
+}
+
+function doEmailSignup() {
+  var em = document.getElementById('em').value;
+  var pw = document.getElementById('pw').value;
+  log('🔄 Creating account...', '#00D4C8');
+  window._sb.auth.signUp({ email: em, password: pw }).then(function(res) {
+    if (res.error) {
+      log('❌ Signup error: ' + res.error.message, '#f87171');
+    } else {
+      log('✅ Account created! Check email to confirm.', '#22c55e');
+    }
+  });
+}
+</script>
+</body>
+</html>
