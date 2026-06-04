@@ -5,7 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Street Team Portal · SUB:MERGED</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Load Supabase with fallback CDNs
+(function() {
+  function loadScript(src, onSuccess, onFail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onSuccess;
+    s.onerror = onFail;
+    document.head.appendChild(s);
+  }
+  var cdn1 = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  var cdn2 = 'https://unpkg.com/@supabase/supabase-js@2';
+  loadScript(cdn1, 
+    function(){ console.log('Supabase loaded from jsdelivr'); },
+    function(){
+      console.warn('jsdelivr failed, trying unpkg...');
+      loadScript(cdn2,
+        function(){ console.log('Supabase loaded from unpkg'); },
+        function(){ 
+          console.error('Both CDNs failed — check network connection');
+          document.getElementById('screen-loading').innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:2rem;text-align:center;"><div style=\'font-size:32px;\'>⚠️</div><div style=\'font-family:sans-serif;color:#fff;font-size:16px;\'>Could not load required libraries.<br>Please check your connection and refresh.</div><button onclick=\'location.reload()\' style=\'margin-top:16px;padding:12px 24px;background:#00D4C8;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;\'>Retry</button></div>';
+        }
+      );
+    }
+  );
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -508,7 +534,18 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 // ══════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let sb;
+function initSupabase() {
+  if (typeof supabase === 'undefined') {
+    console.error('Supabase library not loaded yet');
+    setTimeout(initSupabase, 500);
+    return;
+  }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  console.log('Supabase client initialized');
+  boot();
+}
 
 let currentUser = null;
 let currentRep = null;
@@ -519,15 +556,30 @@ let musicConnected = {};
 // BOOT — check session on load
 // ══════════════════════════════════════════════════════
 async function boot() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    await loadRep();
-    showScreen('app');
-    // Auto-connect music service if rep came via social login
-    const pending = sessionStorage.getItem('pendingMusicConnect');
-    if (pending) { sessionStorage.removeItem('pendingMusicConnect'); setTimeout(()=>{ showView('music'); connectMusic(pending); }, 600); }
-  } else {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      await loadRep();
+      showScreen('app');
+      if (currentRep) initMusicState();
+      const pending = sessionStorage.getItem('pendingMusicConnect');
+      if (pending) { sessionStorage.removeItem('pendingMusicConnect'); setTimeout(()=>{ showView('music'); connectMusic(pending); }, 600); }
+    } else {
+      // Check URL for OAuth error params
+      const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace('#',''));
+      const error = params.get('error') || hashParams.get('error');
+      const errorDesc = params.get('error_description') || hashParams.get('error_description');
+      if (error) {
+        console.error('OAuth error:', error, errorDesc);
+        // Clear the error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      showScreen('login');
+    }
+  } catch(err) {
+    console.error('Boot error:', err);
     showScreen('login');
   }
 }
@@ -1020,7 +1072,11 @@ function initMusicState() {
 // ══════════════════════════════════════════════════════
 // KICK OFF
 // ══════════════════════════════════════════════════════
-boot().then(()=>{ if(currentRep) initMusicState(); });
+// Boot is now called from initSupabase() after library loads
+window.addEventListener('load', function() {
+  // Give CDN scripts a moment to execute after load
+  setTimeout(initSupabase, 100);
+});
 </script>
 </body>
 </html>
