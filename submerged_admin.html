@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · SUB:MERGED</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --cyan:#00D4C8;--cyan-dim:rgba(0,212,200,0.1);--cyan-border:rgba(0,212,200,0.28);
+  --navy:#0d1b2e;--navy2:#0a1525;--surface:#161f30;--surface2:#1e2a3d;--surface3:#263044;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#ffffff;--muted:#7a8799;
+  --gold:#f0b429;--gold-dim:rgba(240,180,41,0.1);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.1);
+  --green:#22c55e;--green-dim:rgba(34,197,94,0.1);
+  --red:#f87171;--red-dim:rgba(248,113,113,0.1);
+  --radius:12px;
+  --font-head:'Barlow Condensed',sans-serif;--font-body:'Barlow',sans-serif;
+}
+body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-height:100vh;}
+
+/* WAVE */
+.wave{width:100%;height:28px;background:var(--cyan);pointer-events:none;clip-path:polygon(0 55%,2% 35%,4% 50%,6% 30%,8% 48%,10% 28%,12% 46%,14% 26%,16% 44%,18% 22%,20% 40%,22% 20%,24% 38%,26% 18%,28% 36%,30% 16%,32% 34%,34% 14%,36% 32%,38% 12%,40% 30%,42% 10%,44% 28%,46% 8%,48% 26%,50% 6%,52% 24%,54% 4%,56% 22%,58% 2%,60% 20%,62% 0%,64% 18%,66% 2%,68% 20%,70% 4%,72% 22%,74% 6%,76% 24%,78% 8%,80% 26%,82% 10%,84% 28%,86% 12%,88% 30%,90% 14%,92% 32%,94% 16%,96% 34%,98% 18%,100% 36%,100% 100%,0 100%);}
+
+/* SCREENS */
+.screen{display:none;}.screen.active{display:block;}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:380px;}
+.login-title{font-family:var(--font-head);font-size:28px;font-weight:900;letter-spacing:0.04em;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem;}
+.field-label{font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block;margin-top:12px;}
+.field-input{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color 0.15s;}
+.field-input:focus{border-color:var(--cyan);}
+.field-input::placeholder{color:var(--muted);}
+.auth-btn{width:100% !important;padding:13px !important;background:var(--cyan) !important;color:#0d1b2e !important;border:none !important;border-radius:8px !important;font-family:var(--font-head) !important;font-size:16px !important;font-weight:800 !important;letter-spacing:0.08em !important;text-transform:uppercase !important;cursor:pointer !important;margin-top:16px !important;}
+.auth-btn:hover{opacity:0.9 !important;}
+.err{background:var(--red-dim);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;display:none;}
+
+/* SHELL */
+.shell{max-width:1100px;margin:0 auto;padding:0 0 4rem;}
+.header{background:var(--navy2);border-bottom:2px solid var(--cyan);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.header-logo{font-family:var(--font-head);font-size:20px;font-weight:900;letter-spacing:0.05em;}
+.header-logo span{color:var(--cyan);}
+.header-tag{font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:0.12em;text-transform:uppercase;background:var(--cyan-dim);border:1px solid var(--cyan-border);padding:3px 10px;border-radius:20px;}
+.logout-btn{background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.06em;padding:5px 10px;cursor:pointer;text-transform:uppercase;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* NAV */
+.body{padding:1.25rem 1.5rem 0;}
+.nav{display:flex;gap:3px;background:var(--navy2);border:1px solid var(--border2);border-radius:var(--radius);padding:4px;margin-bottom:1.5rem;}
+.nav-btn{flex:1;padding:9px 4px;font-family:var(--font-head);font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:none;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+.nav-btn:hover{color:var(--cyan);}
+.nav-btn.active{background:var(--cyan) !important;color:#0d1b2e !important;}
+
+/* VIEWS */
+.view{display:none;}.view.active{display:block;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:12px;}
+.card.cyan-l{border-left:3px solid var(--cyan);}
+.card-title{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.1em;}
+.section-sub{font-size:12px;color:var(--muted);margin-bottom:0.75rem;}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.metric{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cyan);}
+.metric-label{font-family:var(--font-head);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;}
+.metric-val{font-family:var(--font-head);font-size:26px;font-weight:900;color:var(--text);line-height:1;}
+.metric-sub{font-size:11px;color:var(--cyan);margin-top:4px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;margin:2px;}
+.b-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid var(--cyan-border);}
+.b-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,180,41,0.22);}
+.b-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.22);}
+.b-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-gray{background:var(--surface3);color:var(--muted);border:1px solid var(--border);}
+.b-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+
+/* PROGRESS */
+.prog-bar{height:4px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;border-radius:3px;background:var(--cyan);}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border2);}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--surface2);}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:12px;flex-shrink:0;}
+
+/* ACTION BTNS */
+.act-btn{padding:5px 12px;border:none;border-radius:6px;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;margin:2px;}
+.act-approve{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.act-approve:hover{background:var(--green);color:#0d1b2e;}
+.act-reject{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+.act-reject:hover{background:var(--red);color:white;}
+.act-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid var(--cyan-border);}
+.act-cyan:hover{background:var(--cyan);color:#0d1b2e;}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-label{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+.form-input{padding:10px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;transition:border-color 0.15s;}
+.form-input:focus{border-color:var(--cyan);}
+.form-input::placeholder{color:var(--muted);}
+.form-btn{padding:11px 24px;background:var(--cyan) !important;color:#0d1b2e !important;border:none !important;border-radius:8px !important;font-family:var(--font-head) !important;font-size:14px !important;font-weight:800 !important;letter-spacing:0.06em !important;text-transform:uppercase !important;cursor:pointer !important;margin-top:8px !important;}
+.suc{background:var(--green-dim);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);margin-top:12px;display:none;}
+
+/* AI CHAT */
+.ai-wrap{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+.ai-history{padding:1rem;display:flex;flex-direction:column;gap:12px;max-height:380px;overflow-y:auto;}
+.ai-msg{display:flex;gap:10px;}
+.ai-av{width:30px;height:30px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.ai-bubble{background:var(--surface2);border:1px solid var(--border2);border-radius:0 12px 12px 12px;padding:10px 14px;font-size:13px;line-height:1.6;max-width:86%;}
+.user-row{flex-direction:row-reverse;}
+.user-bubble{background:var(--cyan);color:#0d1b2e;border-radius:12px 0 12px 12px;padding:10px 14px;font-size:13px;font-weight:600;line-height:1.6;max-width:86%;}
+.ai-footer{padding:10px 1rem;border-top:1px solid var(--border2);display:flex;gap:8px;background:var(--navy2);}
+.ai-input{flex:1;padding:10px 14px;font-family:var(--font-body);font-size:13px;border-radius:20px;border:1px solid var(--border2);background:var(--surface);color:var(--text);outline:none;}
+.ai-input:focus{border-color:var(--cyan);}
+.ai-send{padding:10px 18px;background:var(--cyan) !important;color:#0d1b2e !important;border:none !important;border-radius:20px !important;font-family:var(--font-head) !important;font-size:13px !important;font-weight:800 !important;cursor:pointer !important;}
+.ai-send:disabled{opacity:0.4 !important;cursor:not-allowed !important;}
+.typing{display:flex;gap:5px;align-items:center;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite;}
+.dot:nth-child(2){animation-delay:0.2s;}.dot:nth-child(3){animation-delay:0.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+.empty{text-align:center;padding:2rem;color:var(--muted);font-size:13px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+@media(max-width:700px){
+  .metrics{grid-template-columns:1fr 1fr;}
+  .two-col{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .nav-btn{font-size:10px;padding:7px 2px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="login-wrap">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="font-size:42px;">🤿</div>
+      <div style="font-family:var(--font-head);font-size:34px;font-weight:900;letter-spacing:0.06em;">SUB<span style="color:var(--cyan);">:</span>MERGED</div>
+      <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cyan);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Admin Dashboard</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Admin Sign In</div>
+      <div class="login-sub">Restricted to authorized coordinators only</div>
+      <label class="field-label">Email</label>
+      <input class="field-input" id="admin-email" type="email" placeholder="your@email.com" />
+      <label class="field-label">Password</label>
+      <input class="field-input" id="admin-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()" />
+      <button class="auth-btn" onclick="adminLogin()">Sign In</button>
+      <div class="err" id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app" class="screen">
+  <div class="shell">
+    <div class="header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="header-logo">SUB<span>:</span>MERGED</div>
+        <div class="header-tag">Admin</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;color:var(--muted);" id="admin-name"></span>
+        <button class="logout-btn" onclick="adminLogout()">Log out</button>
+      </div>
+    </div>
+    <div class="wave"></div>
+    <div class="body">
+      <div class="nav">
+        <button class="nav-btn active" onclick="showView('overview')">Overview</button>
+        <button class="nav-btn" onclick="showView('reps')">Reps</button>
+        <button class="nav-btn" onclick="showView('content')">Content</button>
+        <button class="nav-btn" onclick="showView('payouts')">Payouts</button>
+        <button class="nav-btn" onclick="showView('events')">Events</button>
+        <button class="nav-btn" onclick="showView('ai')">AI Coord</button>
+      </div>
+
+      <!-- ── OVERVIEW ── -->
+      <div id="view-overview" class="view active">
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">Total reps</div>
+            <div class="metric-val" id="ov-reps">—</div>
+            <div class="metric-sub">registered</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Codes sold</div>
+            <div class="metric-val" id="ov-codes">—</div>
+            <div class="metric-sub">all events</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Payouts due</div>
+            <div class="metric-val" id="ov-payouts">—</div>
+            <div class="metric-sub">unpaid</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Pending content</div>
+            <div class="metric-val" id="ov-content">—</div>
+            <div class="metric-sub">needs review</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Active event</div>
+            <div class="metric-val" id="ov-event" style="font-size:16px;margin-top:4px;">—</div>
+            <div class="metric-sub" id="ov-event-sub"></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Top reps this event</div>
+            <div id="top-reps-list"><div class="empty">Loading...</div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Recent sales</div>
+            <div id="recent-sales-list"><div class="empty">Loading...</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Log a manual sale</div>
+          <div class="section-sub">For cash sales or door sales not tracked through Eventbrite</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Promo code</label>
+              <input class="form-input" id="manual-code" type="text" placeholder="JAZZ12" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tickets sold</label>
+              <input class="form-input" id="manual-qty" type="number" value="1" min="1" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:8px;">
+            <label class="form-label">Event</label>
+            <select class="form-input" id="manual-event"></select>
+          </div>
+          <button class="form-btn" onclick="logManualSale()">Log sale</button>
+          <div class="err" id="manual-err"></div>
+          <div class="suc" id="manual-suc"></div>
+        </div>
+      </div>
+
+      <!-- ── REPS ── -->
+      <div id="view-reps" class="view">
+        <div class="card">
+          <div class="card-title">All reps</div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Rep</th>
+                  <th>Code</th>
+                  <th>Rank</th>
+                  <th>Lifetime pts</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody id="reps-table-body">
+                <tr><td colspan="6" class="empty">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CONTENT ── -->
+      <div id="view-content" class="view">
+        <div class="card">
+          <div class="card-title">Pending content submissions</div>
+          <div class="section-sub">Approve to award points · Reject to decline</div>
+          <div id="content-pending"><div class="empty">Loading...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recently approved</div>
+          <div id="content-approved"><div class="empty">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- ── PAYOUTS ── -->
+      <div id="view-payouts" class="view">
+        <div class="card cyan-l">
+          <div class="card-title">Payout report</div>
+          <div class="section-sub">Cash owed to each rep based on codes sold + milestone bonuses</div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Filter by event</label>
+            <select class="form-input" id="payout-event-filter" onchange="loadPayouts()"></select>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Rep</th>
+                  <th>Rank</th>
+                  <th>Codes sold</th>
+                  <th>Rate</th>
+                  <th>Base pay</th>
+                  <th>Bonuses</th>
+                  <th>Total owed</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="payouts-table-body">
+                <tr><td colspan="8" class="empty">Select an event above</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="form-btn" onclick="exportPayouts()">Export CSV</button>
+            <button class="form-btn" style="background:var(--green-dim) !important;color:var(--green) !important;border:1px solid rgba(34,197,94,0.2) !important;" onclick="markAllPaid()">Mark all paid</button>
+          </div>
+          <div id="payout-total" style="margin-top:12px;font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--cyan);"></div>
+        </div>
+      </div>
+
+      <!-- ── EVENTS ── -->
+      <div id="view-events" class="view">
+        <div class="card">
+          <div class="card-title">Add new event</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Event name</label>
+              <input class="form-input" id="ev-name" type="text" placeholder="Summer Rave" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input class="form-input" id="ev-date" type="date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Venue</label>
+              <input class="form-input" id="ev-venue" type="text" placeholder="Musica" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input class="form-input" id="ev-city" type="text" placeholder="Akron, OH" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Capacity</label>
+              <input class="form-input" id="ev-capacity" type="number" placeholder="1000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-input" id="ev-status">
+                <option value="upcoming">Upcoming</option>
+                <option value="active">Active</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Eventbrite Event ID (optional)</label>
+              <input class="form-input" id="ev-ebid" type="text" placeholder="123456789" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Banner emoji</label>
+              <input class="form-input" id="ev-emoji" type="text" placeholder="🎵" maxlength="2" />
+            </div>
+          </div>
+          <button class="form-btn" onclick="addEvent()">Add event</button>
+          <div class="err" id="ev-err"></div>
+          <div class="suc" id="ev-suc"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">All events</div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Date</th>
+                  <th>Venue</th>
+                  <th>Capacity</th>
+                  <th>Sold</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="events-table-body">
+                <tr><td colspan="7" class="empty">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AI COORDINATOR ── -->
+      <div id="view-ai" class="view">
+        <div class="card" style="margin-bottom:8px;">
+          <div class="card-title">AI street team coordinator</div>
+          <div class="section-sub">Ask anything — payout reports, rep analysis, outreach drafts, social copy</div>
+        </div>
+        <div class="ai-wrap">
+          <div class="ai-history" id="ai-history">
+            <div class="ai-msg">
+              <div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+              <div class="ai-bubble">Admin mode activated. I have full context on your reps, events, and sales. What do you need — payout report, rep analysis, outreach copy, or something else?</div>
+            </div>
+          </div>
+          <div class="ai-footer">
+            <input class="ai-input" id="ai-input" placeholder="e.g. Who are my top 5 reps? Draft a message to idle reps..." onkeydown="if(event.key==='Enter')sendAI()" />
+            <button class="ai-send" id="ai-send" onclick="sendAI()">Send</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quick prompts</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Give me a full payout report for all reps on the current active event')">Run payout report for active event</button>
+            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Which reps have not sold any codes or posted any content in the last 7 days? Draft a motivational text message to re-engage them.')">Draft outreach to idle reps</button>
+            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Write 5 Instagram captions for Summer Rave at Musica in Akron OH on July 25th that street team reps can copy and post right now')">Generate social copy pack</button>
+            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Analyze my street team performance and tell me who my strongest reps are, who needs motivation, and what I should do this week to maximize ticket sales')">Street team performance analysis</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
+
+let sb, currentAdmin, allEvents = [], allReps = [];
+
+window.addEventListener('load', () => {
+  setTimeout(async () => {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { currentAdmin = session.user; showApp(); }
+    else showScreen('login');
+  }, 200);
+});
+
+// ── AUTH ──
+async function adminLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const pass = document.getElementById('admin-pass').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  currentAdmin = data.user;
+  showApp();
+}
+
+async function adminLogout() {
+  await sb.auth.signOut();
+  showScreen('login');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+async function showApp() {
+  showScreen('app');
+  document.getElementById('admin-name').textContent = currentAdmin.email;
+  await Promise.all([loadAllData()]);
+  showView('overview');
+}
+
+// ── DATA ──
+async function loadAllData() {
+  const [evRes, repRes] = await Promise.all([
+    sb.from('events').select('*').order('date'),
+    sb.from('reps').select('*').order('lifetime_points', { ascending: false })
+  ]);
+  allEvents = evRes.data || [];
+  allReps = repRes.data || [];
+  populateEventSelects();
+  loadOverview();
+  loadRepsTable();
+  loadContent();
+  loadPayouts();
+  loadEventsTable();
+}
+
+function populateEventSelects() {
+  const selects = ['manual-event', 'payout-event-filter'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = allEvents.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  });
+}
+
+// ── OVERVIEW ──
+async function loadOverview() {
+  document.getElementById('ov-reps').textContent = allReps.length;
+
+  const { data: sales } = await sb.from('rep_events').select('codes_sold, cash_earned');
+  const totalCodes = sales?.reduce((s, r) => s + (r.codes_sold || 0), 0) || 0;
+  const totalCash = sales?.reduce((s, r) => s + parseFloat(r.cash_earned || 0), 0) || 0;
+  document.getElementById('ov-codes').textContent = totalCodes;
+  document.getElementById('ov-payouts').textContent = '$' + totalCash.toFixed(0);
+
+  const { count } = await sb.from('content_submissions').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+  document.getElementById('ov-content').textContent = count || 0;
+
+  const activeEvent = allEvents.find(e => e.status === 'active');
+  if (activeEvent) {
+    document.getElementById('ov-event').textContent = activeEvent.name;
+    const pct = Math.round((activeEvent.tickets_sold / activeEvent.capacity) * 100);
+    document.getElementById('ov-event-sub').textContent = `${activeEvent.tickets_sold} / ${activeEvent.capacity} sold (${pct}%)`;
+  }
+
+  // Top reps
+  if (activeEvent) {
+    const { data: topReps } = await sb.from('rep_events')
+      .select('*, reps(name, rank)')
+      .eq('event_id', activeEvent.id)
+      .order('codes_sold', { ascending: false })
+      .limit(5);
+    document.getElementById('top-reps-list').innerHTML = (topReps || []).length === 0
+      ? '<div class="empty">No reps have joined yet</div>'
+      : (topReps || []).map((re, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="font-family:var(--font-head);font-size:18px;font-weight:900;min-width:24px;color:var(--muted);">${i + 1}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:13px;">${re.reps?.name || 'Unknown'}</div>
+            <div style="font-size:11px;color:var(--muted);">${re.reps?.rank} · ${re.codes_sold} codes · $${parseFloat(re.cash_earned || 0).toFixed(0)} earned</div>
+          </div>
+          <span class="badge b-cyan">${re.points_earned} pts</span>
+        </div>`).join('');
+  }
+
+  // Recent sales
+  const { data: recentSales } = await sb.from('sales')
+    .select('*, reps(name), events(name)')
+    .order('sold_at', { ascending: false })
+    .limit(6);
+  document.getElementById('recent-sales-list').innerHTML = (recentSales || []).length === 0
+    ? '<div class="empty">No sales yet</div>'
+    : (recentSales || []).map(s => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:18px;">🎫</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13px;">${s.reps?.name} · ${s.promo_code}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.events?.name} · ${new Date(s.sold_at).toLocaleDateString()}</div>
+        </div>
+        <span class="badge b-green">+$${parseFloat(s.cash_awarded || 0).toFixed(0)}</span>
+      </div>`).join('');
+}
+
+// ── REPS TABLE ──
+function loadRepsTable() {
+  const rankColors = { Legend: '#f0b429', Closer: '#00D4C8', Hotshot: '#a78bfa', 'Rising Star': '#22c55e', Recruit: '#7a8799' };
+  document.getElementById('reps-table-body').innerHTML = allReps.length === 0
+    ? '<tr><td colspan="6" class="empty">No reps yet</td></tr>'
+    : allReps.map(r => {
+      const initials = r.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px;">
+          <div class="av" style="background:rgba(0,212,200,0.1);color:var(--cyan);">${initials}</div>
+          <div>
+            <div style="font-weight:600;">${r.name}</div>
+            <div style="font-size:11px;color:var(--muted);">${r.email || ''}</div>
+          </div>
+        </div></td>
+        <td><span class="badge b-cyan">${r.promo_code}</span></td>
+        <td><span style="color:${rankColors[r.rank] || '#7a8799'};font-family:var(--font-head);font-weight:700;">${r.rank}</span></td>
+        <td>${r.lifetime_points.toLocaleString()}</td>
+        <td><span class="badge ${r.status === 'active' ? 'b-green' : 'b-gray'}">${r.status || 'active'}</span></td>
+        <td style="color:var(--muted);font-size:12px;">${new Date(r.created_at).toLocaleDateString()}</td>
+      </tr>`;
+    }).join('');
+}
+
+// ── CONTENT ──
+async function loadContent() {
+  const { data: pending } = await sb.from('content_submissions')
+    .select('*, reps(name), events(name)')
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending: false });
+
+  const typeLabels = { flyer_share: 'Flyer share (+50pts)', original_content: 'Original content (+150pts)' };
+  const typeIcons = { flyer_share: '📸', original_content: '🎥' };
+
+  document.getElementById('content-pending').innerHTML = (pending || []).length === 0
+    ? '<div class="empty">No pending submissions 🎉</div>'
+    : (pending || []).map(s => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:24px;">${typeIcons[s.content_type] || '📌'}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13px;">${s.reps?.name} — ${typeLabels[s.content_type] || s.content_type}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${s.events?.name} · ${s.platform} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
+          <a href="${s.url}" target="_blank" style="font-size:11px;color:var(--cyan);margin-top:2px;display:inline-block;">View post →</a>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="act-btn act-approve" onclick="reviewContent('${s.id}','approved','${s.rep_id}','${s.event_id}','${s.content_type}')">Approve</button>
+          <button class="act-btn act-reject" onclick="reviewContent('${s.id}','rejected','${s.rep_id}','${s.event_id}','${s.content_type}')">Reject</button>
+        </div>
+      </div>`).join('');
+
+  const { data: approved } = await sb.from('content_submissions')
+    .select('*, reps(name), events(name)')
+    .eq('status', 'approved')
+    .order('reviewed_at', { ascending: false })
+    .limit(10);
+
+  document.getElementById('content-approved').innerHTML = (approved || []).length === 0
+    ? '<div class="empty">No approved submissions yet</div>'
+    : (approved || []).map(s => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:20px;">${typeIcons[s.content_type] || '📌'}</div>
+        <div style="flex:1;">
+          <div style="font-weight:500;font-size:13px;">${s.reps?.name} — ${s.platform}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.events?.name} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
+        </div>
+        <span class="badge b-green">+${s.points_awarded} pts</span>
+      </div>`).join('');
+}
+
+async function reviewContent(id, status, repId, eventId, contentType) {
+  const pts = contentType === 'original_content' ? 150 : 50;
+  const updates = { status, reviewed_at: new Date().toISOString() };
+  if (status === 'approved') updates.points_awarded = pts;
+
+  await sb.from('content_submissions').update(updates).eq('id', id);
+
+  if (status === 'approved') {
+    // Award points
+    await sb.from('points_log').insert({
+      rep_id: repId, event_id: eventId,
+      type: contentType === 'original_content' ? 'content_original' : 'content_share',
+      points: pts, cash: 0,
+      description: `${contentType === 'original_content' ? 'Original content' : 'Flyer share'} approved`
+    });
+    const rep = allReps.find(r => r.id === repId);
+    if (rep) {
+      await sb.from('reps').update({ lifetime_points: rep.lifetime_points + pts }).eq('id', repId);
+    }
+  }
+  loadContent();
+  loadOverview();
+}
+
+// ── PAYOUTS ──
+async function loadPayouts() {
+  const eventId = document.getElementById('payout-event-filter')?.value;
+  if (!eventId) return;
+
+  const { data } = await sb.from('rep_events')
+    .select('*, reps(name, rank)')
+    .eq('event_id', eventId)
+    .order('cash_earned', { ascending: false });
+
+  if (!data || data.length === 0) {
+    document.getElementById('payouts-table-body').innerHTML = '<tr><td colspan="8" class="empty">No reps have joined this event yet</td></tr>';
+    document.getElementById('payout-total').textContent = '';
+    return;
+  }
+
+  const rates = { Legend: 3, Closer: 3, Hotshot: 2.5, 'Rising Star': 2, Recruit: 2 };
+  let grandTotal = 0;
+
+  document.getElementById('payouts-table-body').innerHTML = data.map(re => {
+    const rank = re.reps?.rank || 'Recruit';
+    const rate = rates[rank] || 2;
+    const basePay = re.codes_sold * rate;
+    const bonuses = parseFloat(re.cash_earned || 0) - basePay;
+    const total = parseFloat(re.cash_earned || 0);
+    grandTotal += total;
+    return `<tr>
+      <td><div style="font-weight:600;">${re.reps?.name || 'Unknown'}</div></td>
+      <td><span style="font-family:var(--font-head);font-weight:700;color:${rank === 'Legend' ? '#f0b429' : 'var(--cyan)'};">${rank}</span></td>
+      <td>${re.codes_sold}</td>
+      <td>$${rate.toFixed(2)}/code</td>
+      <td>$${basePay.toFixed(2)}</td>
+      <td>${bonuses > 0 ? '$' + bonuses.toFixed(2) : '—'}</td>
+      <td><strong style="color:var(--cyan);">$${total.toFixed(2)}</strong></td>
+      <td><span class="badge b-gold">Pending</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('payout-total').textContent = `Total payouts: $${grandTotal.toFixed(2)}`;
+}
+
+function exportPayouts() {
+  const rows = [['Rep', 'Rank', 'Codes Sold', 'Rate', 'Base Pay', 'Bonuses', 'Total']];
+  document.querySelectorAll('#payouts-table-body tr').forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
+    if (cells.length > 1) rows.push(cells.slice(0, 7));
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'payouts.csv';
+  a.click();
+}
+
+async function markAllPaid() {
+  if (!confirm('Mark all pending payouts as paid?')) return;
+  const eventId = document.getElementById('payout-event-filter').value;
+  await sb.from('rep_events').update({ cash_earned: 0 }).eq('event_id', eventId);
+  alert('All payouts marked as paid and reset to $0');
+  loadPayouts();
+}
+
+// ── EVENTS TABLE ──
+function loadEventsTable() {
+  document.getElementById('events-table-body').innerHTML = allEvents.length === 0
+    ? '<tr><td colspan="7" class="empty">No events yet</td></tr>'
+    : allEvents.map(ev => {
+      const pct = Math.round((ev.tickets_sold / ev.capacity) * 100);
+      return `<tr>
+        <td><strong>${ev.banner_emoji || '🎵'} ${ev.name}</strong></td>
+        <td>${new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+        <td>${ev.venue}</td>
+        <td>${ev.capacity.toLocaleString()}</td>
+        <td>${ev.tickets_sold} <span style="color:var(--muted);font-size:11px;">(${pct}%)</span></td>
+        <td><span class="badge ${ev.status === 'active' ? 'b-cyan' : ev.status === 'upcoming' ? 'b-gold' : 'b-gray'}">${ev.status}</span></td>
+        <td>
+          <button class="act-btn act-cyan" onclick="setEventStatus('${ev.id}','active')">Set active</button>
+          <button class="act-btn act-reject" onclick="deleteEvent('${ev.id}')">Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+}
+
+async function addEvent() {
+  const name = document.getElementById('ev-name').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const venue = document.getElementById('ev-venue').value.trim();
+  const city = document.getElementById('ev-city').value.trim();
+  const capacity = parseInt(document.getElementById('ev-capacity').value);
+  const status = document.getElementById('ev-status').value;
+  const ebId = document.getElementById('ev-ebid').value.trim();
+  const emoji = document.getElementById('ev-emoji').value.trim() || '🎵';
+  const err = document.getElementById('ev-err');
+  const suc = document.getElementById('ev-suc');
+  err.style.display = 'none'; suc.style.display = 'none';
+  if (!name || !date || !venue || !capacity) { err.textContent = 'Please fill in all required fields.'; err.style.display = 'block'; return; }
+  const { error } = await sb.from('events').insert({ name, date, venue, city, capacity, status, banner_emoji: emoji, eventbrite_id: ebId || null, tickets_sold: 0 });
+  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  suc.textContent = `${name} added successfully!`;
+  suc.style.display = 'block';
+  ['ev-name', 'ev-date', 'ev-venue', 'ev-city', 'ev-capacity', 'ev-ebid'].forEach(id => document.getElementById(id).value = '');
+  await loadAllData();
+}
+
+async function setEventStatus(id, status) {
+  await sb.from('events').update({ status }).eq('id', id);
+  await loadAllData();
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Delete this event? This cannot be undone.')) return;
+  await sb.from('events').delete().eq('id', id);
+  await loadAllData();
+}
+
+// ── MANUAL SALE ──
+async function logManualSale() {
+  const code = document.getElementById('manual-code').value.trim().toUpperCase();
+  const qty = parseInt(document.getElementById('manual-qty').value) || 1;
+  const eventId = document.getElementById('manual-event').value;
+  const err = document.getElementById('manual-err');
+  const suc = document.getElementById('manual-suc');
+  err.style.display = 'none'; suc.style.display = 'none';
+
+  if (!code) { err.textContent = 'Please enter a promo code.'; err.style.display = 'block'; return; }
+
+  const rep = allReps.find(r => r.promo_code === code);
+  if (!rep) { err.textContent = `No rep found with code ${code}.`; err.style.display = 'block'; return; }
+
+  const rates = { Legend: 3, Closer: 3, Hotshot: 2.5, 'Rising Star': 2, Recruit: 2 };
+  const rate = rates[rep.rank] || 2;
+  const cash = rate * qty;
+  const pts = 20 * qty;
+
+  // Get or create rep_event
+  let { data: re } = await sb.from('rep_events').select('*').eq('rep_id', rep.id).eq('event_id', eventId).single();
+  if (!re) {
+    const { data: newRe } = await sb.from('rep_events').insert({ rep_id: rep.id, event_id: eventId, codes_sold: 0, points_earned: 0, cash_earned: 0 }).select().single();
+    re = newRe;
+  }
+
+  await sb.from('rep_events').update({
+    codes_sold: (re.codes_sold || 0) + qty,
+    points_earned: (re.points_earned || 0) + pts,
+    cash_earned: parseFloat(re.cash_earned || 0) + cash
+  }).eq('id', re.id);
+
+  await sb.from('reps').update({ lifetime_points: rep.lifetime_points + pts }).eq('id', rep.id);
+
+  await sb.from('sales').insert({ rep_id: rep.id, event_id: eventId, promo_code: code, ticket_quantity: qty, points_awarded: pts, cash_awarded: cash, source: 'manual' });
+
+  await sb.from('points_log').insert({ rep_id: rep.id, event_id: eventId, type: 'sale', points: pts, cash: cash, description: `${qty} manual sale(s) via code ${code}` });
+
+  suc.textContent = `✅ Logged ${qty} sale(s) for ${rep.name} — +${pts} pts, +$${cash.toFixed(2)}`;
+  suc.style.display = 'block';
+  document.getElementById('manual-code').value = '';
+  document.getElementById('manual-qty').value = '1';
+  await loadAllData();
+}
+
+// ── AI COORDINATOR ──
+async function sendAI() {
+  const input = document.getElementById('ai-input');
+  const btn = document.getElementById('ai-send');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const history = document.getElementById('ai-history');
+  history.innerHTML += `<div class="ai-msg user-row"><div class="user-bubble">${msg}</div></div>`;
+  input.value = ''; btn.disabled = true;
+  const tid = 't' + Date.now();
+  history.innerHTML += `<div class="ai-msg" id="${tid}"><div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="ai-bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  history.scrollTop = history.scrollHeight;
+
+  const activeEvent = allEvents.find(e => e.status === 'active');
+  const repSummary = allReps.slice(0, 10).map(r => `${r.name} (${r.rank}, ${r.lifetime_points}pts, code:${r.promo_code})`).join('; ');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are the AI coordinator for SUB:MERGED EVENTS street team program. Admin context:
+
+ACTIVE EVENT: ${activeEvent ? `${activeEvent.name} at ${activeEvent.venue}, ${activeEvent.city} on ${activeEvent.date}. ${activeEvent.tickets_sold}/${activeEvent.capacity} tickets sold.` : 'No active event'}
+TOTAL REPS: ${allReps.length}
+TOP REPS: ${repSummary}
+
+POINT SYSTEM: 20pts per code, 50pts flyer share, 150pts original content, milestone bonuses at 10/25/50 codes.
+PAY RATES: Recruit/Rising Star $2/code, Hotshot $2.50/code, Closer/Legend $3/code.
+
+You help with: payout reports, rep performance analysis, motivational outreach drafts, social media copy, event strategy. Be direct, energetic, nightlife-appropriate.`,
+        messages: [{ role: 'user', content: msg }]
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Error — try again.';
+    document.getElementById(tid).remove();
+    history.innerHTML += `<div class="ai-msg"><div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="ai-bubble" style="white-space:pre-wrap;">${reply}</div></div>`;
+  } catch (e) {
+    document.getElementById(tid).remove();
+    history.innerHTML += `<div class="ai-msg"><div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="ai-bubble">Connection error. Try again.</div></div>`;
+  }
+  btn.disabled = false;
+  history.scrollTop = history.scrollHeight;
+}
+
+function fillAI(txt) {
+  document.getElementById('ai-input').value = txt;
+  document.getElementById('ai-input').focus();
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  const idx = ['overview', 'reps', 'content', 'payouts', 'events', 'ai'].indexOf(id);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+}
+</script>
+</body>
+</html>
