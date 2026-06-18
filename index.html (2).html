@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Street Team Portal · SUB:MERGED</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>
+// Load Supabase with fallback CDNs
+(function() {
+  function loadScript(src, onSuccess, onFail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onSuccess;
+    s.onerror = onFail;
+    document.head.appendChild(s);
+  }
+  var cdn1 = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  var cdn2 = 'https://unpkg.com/@supabase/supabase-js@2';
+  loadScript(cdn1, 
+    function(){ console.log('Supabase loaded from jsdelivr'); },
+    function(){
+      console.warn('jsdelivr failed, trying unpkg...');
+      loadScript(cdn2,
+        function(){ console.log('Supabase loaded from unpkg'); },
+        function(){ 
+          console.error('Both CDNs failed — check network connection');
+          document.getElementById('screen-loading').innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:2rem;text-align:center;"><div style=\'font-size:32px;\'>⚠️</div><div style=\'font-family:sans-serif;color:#fff;font-size:16px;\'>Could not load required libraries.<br>Please check your connection and refresh.</div><button onclick=\'location.reload()\' style=\'margin-top:16px;padding:12px 24px;background:#00D4C8;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;\'>Retry</button></div>';
+        }
+      );
+    }
+  );
+})();
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --cyan:#00D4C8;--cyan-dim:rgba(0,212,200,0.1);--cyan-border:rgba(0,212,200,0.28);
+  --navy:#0d1b2e;--navy2:#0a1525;--surface:#161f30;--surface2:#1e2a3d;--surface3:#263044;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#ffffff;--muted:#7a8799;
+  --gold:#f0b429;--gold-dim:rgba(240,180,41,0.1);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.1);
+  --green:#22c55e;--green-dim:rgba(34,197,94,0.1);
+  --red:#f87171;--red-dim:rgba(248,113,113,0.1);
+  --radius:12px;
+  --font-head:'Barlow Condensed',sans-serif;--font-body:'Barlow',sans-serif;
+}
+body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+
+/* WAVE */
+.wave-top{width:100%;height:28px;background:var(--cyan);pointer-events:none;clip-path:polygon(0 55%,2% 35%,4% 50%,6% 30%,8% 48%,10% 28%,12% 46%,14% 26%,16% 44%,18% 22%,20% 40%,22% 20%,24% 38%,26% 18%,28% 36%,30% 16%,32% 34%,34% 14%,36% 32%,38% 12%,40% 30%,42% 10%,44% 28%,46% 8%,48% 26%,50% 6%,52% 24%,54% 4%,56% 22%,58% 2%,60% 20%,62% 0%,64% 18%,66% 2%,68% 20%,70% 4%,72% 22%,74% 6%,76% 24%,78% 8%,80% 26%,82% 10%,84% 28%,86% 12%,88% 30%,90% 14%,92% 32%,94% 16%,96% 34%,98% 18%,100% 36%,100% 100%,0 100%);}
+.wave-bot{width:100%;height:28px;background:var(--cyan);pointer-events:none;clip-path:polygon(0 55%,2% 35%,4% 50%,6% 30%,8% 48%,10% 28%,12% 46%,14% 26%,16% 44%,18% 22%,20% 40%,22% 20%,24% 38%,26% 18%,28% 36%,30% 16%,32% 34%,34% 14%,36% 32%,38% 12%,40% 30%,42% 10%,44% 28%,46% 8%,48% 26%,50% 6%,52% 24%,54% 4%,56% 22%,58% 2%,60% 20%,62% 0%,64% 18%,66% 2%,68% 20%,70% 4%,72% 22%,74% 6%,76% 24%,78% 8%,80% 26%,82% 10%,84% 28%,86% 12%,88% 30%,90% 14%,92% 32%,94% 16%,96% 34%,98% 18%,100% 36%,100% 100%,0 100%);transform:scaleY(-1);}
+
+/* SCREENS */
+.screen{display:none;}.screen.active{display:block;}
+
+/* LOADING */
+.loading-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;z-index:5;}
+.logo-diver{font-size:52px;margin-bottom:12px;display:block;text-align:center;}
+.logo-wordmark{font-family:var(--font-head);font-size:38px;font-weight:900;letter-spacing:0.06em;color:var(--text);text-align:center;}
+.logo-wordmark span{color:var(--cyan);}
+.logo-tag{font-family:var(--font-head);font-size:13px;font-weight:600;color:var(--cyan);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;text-align:center;margin-bottom:2rem;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:400px;position:relative;z-index:10;}
+.tab-row{display:flex;gap:3px;background:var(--navy2);border-radius:8px;padding:3px;margin-bottom:1.5rem;}
+.tab-btn{flex:1;padding:8px;font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:none;border-radius:6px;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+.tab-btn.active{background:var(--cyan);color:#0d1b2e;}
+.field-label{font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block;margin-top:12px;}
+.field-input{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color 0.15s;}
+.field-input:focus{border-color:var(--cyan);}
+.field-input::placeholder{color:var(--muted);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.auth-btn{width:100% !important;padding:13px !important;background:var(--cyan) !important;color:#0d1b2e !important;border:none !important;border-radius:8px !important;font-family:var(--font-head) !important;font-size:16px !important;font-weight:800 !important;letter-spacing:0.08em !important;text-transform:uppercase !important;cursor:pointer !important;margin-top:16px !important;transition:opacity 0.15s !important;box-shadow:none !important;}
+.auth-btn:hover{opacity:0.9;}
+.auth-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.social-login-btn{width:100% !important;padding:14px 20px !important;border:none !important;border-radius:10px !important;font-family:var(--font-head) !important;font-size:15px !important;font-weight:800 !important;letter-spacing:0.06em !important;text-transform:uppercase !important;cursor:pointer !important;display:flex !important;align-items:center !important;justify-content:center !important;gap:12px !important;margin-bottom:10px !important;transition:opacity 0.15s !important;color:#0d1b2e !important;box-shadow:none !important;}
+.social-login-btn:hover{opacity:0.88 !important;}
+.social-login-btn:last-child{margin-bottom:0 !important;}
+.slb-spotify{background:#1DB954 !important;color:#0d1b2e !important;}
+.slb-soundcloud{background:#ff5500 !important;color:#ffffff !important;}
+.slb-apple{background:#fc3c44 !important;color:#ffffff !important;}
+.slb-email{background:var(--surface2) !important;color:var(--text) !important;border:1px solid var(--border2) !important;}
+.slb-email:hover{border-color:var(--cyan) !important;}
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
+.divider-line{flex:1;height:1px;background:var(--border2);}
+.divider-text{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+.auth-error{background:var(--red-dim);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;display:none;}
+.auth-success{background:var(--green-dim);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);margin-top:12px;display:none;}
+
+/* APP SHELL */
+.app-shell{max-width:960px;margin:0 auto;padding:0 0 4rem;}
+.site-header{background:var(--navy2);border-bottom:2px solid var(--cyan);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.header-logo{font-family:var(--font-head);font-size:20px;font-weight:900;letter-spacing:0.05em;}
+.header-logo span{color:var(--cyan);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.rep-pill{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:5px 12px 5px 6px;}
+.rep-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:11px;}
+.rep-pill-name{font-family:var(--font-head);font-size:13px;font-weight:700;}
+.logout-btn{background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.06em;padding:5px 10px;cursor:pointer;text-transform:uppercase;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* NAV */
+.app-body{padding:1.25rem 1.5rem 0;}
+.nav{display:flex;gap:3px;background:var(--navy2);border:1px solid var(--border2);border-radius:var(--radius);padding:4px;margin-bottom:1.5rem;}
+.nav-btn{flex:1;padding:9px 4px;font-family:var(--font-head);font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:none;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.15s;white-space:nowrap;}
+.nav-btn:hover{color:var(--cyan);}
+.nav-btn.active{background:var(--cyan);color:#0d1b2e;}
+
+/* VIEWS */
+.view{display:none;}.view.active{display:block;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:12px;}
+.card.cyan-l{border-left:3px solid var(--cyan);}
+.card-title{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.1em;}
+.section-sub{font-size:12px;color:var(--muted);margin-bottom:0.75rem;}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.metric{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cyan);}
+.metric-label{font-family:var(--font-head);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;}
+.metric-val{font-family:var(--font-head);font-size:26px;font-weight:900;color:var(--text);line-height:1;}
+.metric-sub{font-size:11px;color:var(--cyan);margin-top:4px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;margin:2px;}
+.b-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid var(--cyan-border);}
+.b-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,180,41,0.22);}
+.b-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.22);}
+.b-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-gray{background:var(--surface3);color:var(--muted);border:1px solid var(--border);}
+
+/* PROGRESS */
+.prog-bar{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;border-radius:3px;background:var(--cyan);transition:width 0.5s;}
+
+/* CODE DISPLAY */
+.code-display{background:var(--navy2);border:2px dashed var(--cyan-border);border-radius:10px;padding:1.25rem;text-align:center;margin-bottom:1rem;}
+.code-label{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.code-val{font-family:var(--font-head);font-size:36px;font-weight:900;color:var(--cyan);letter-spacing:0.12em;}
+.code-copy{margin-top:10px;padding:8px 20px;background:var(--cyan-dim);border:1px solid var(--cyan-border);border-radius:6px;font-family:var(--font-head);font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--cyan);cursor:pointer;transition:all 0.15s;}
+.code-copy:hover{background:var(--cyan);color:var(--navy);}
+
+/* RANK */
+.rank-progress{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border2);margin-bottom:1rem;}
+
+/* EVENTS */
+.event-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;transition:border-color 0.15s;}
+.event-card:hover{border-color:var(--cyan-border);}
+.event-card.joined{border-left:3px solid var(--cyan);}
+.event-banner{height:80px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative;background:linear-gradient(135deg,#0d2535,#0a3040);}
+.pill{position:absolute;padding:3px 10px;border-radius:20px;font-family:var(--font-head);font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;}
+.pill-live{background:var(--cyan);color:var(--navy);top:10px;right:12px;}
+.pill-upcoming{background:var(--surface3);color:var(--muted);border:1px solid var(--border2);top:10px;right:12px;}
+.pill-joined{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2);top:10px;left:12px;}
+.event-body{padding:1rem 1.25rem;}
+.event-name{font-family:var(--font-head);font-size:20px;font-weight:900;letter-spacing:0.04em;}
+.event-date{font-family:var(--font-head);font-size:13px;font-weight:600;color:var(--cyan);margin-top:3px;}
+.event-venue{font-size:12px;color:var(--muted);margin-top:2px;}
+.event-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.ev-stat-val{font-family:var(--font-head);font-size:18px;font-weight:900;}
+.ev-stat-label{font-size:10px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+.join-btn{padding:9px 20px !important;background:var(--cyan) !important;color:#0d1b2e !important;border:none !important;border-radius:8px !important;font-family:var(--font-head) !important;font-size:13px !important;font-weight:800 !important;letter-spacing:0.06em !important;text-transform:uppercase !important;cursor:pointer !important;box-shadow:none !important;}
+.join-btn:disabled{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2);cursor:default;}
+
+/* LEADERBOARD */
+.lb-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.lb-row:last-child{border-bottom:none;}
+.lb-row.me{background:var(--cyan-dim);margin:0 -1.5rem;padding:11px 1.5rem;}
+.lb-rank{font-family:var(--font-head);font-size:20px;font-weight:900;min-width:28px;color:var(--muted);}
+.lb-rank.r1{color:var(--gold);}.lb-rank.r2{color:#c0c0c0;}.lb-rank.r3{color:#cd7f32;}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:13px;flex-shrink:0;border:1px solid var(--border2);}
+.lb-info{flex:1;min-width:0;}
+.lb-name{font-family:var(--font-head);font-weight:700;font-size:15px;}
+.lb-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.lb-right{text-align:right;flex-shrink:0;}
+.lb-pts{font-family:var(--font-head);font-weight:900;font-size:16px;color:var(--cyan);}
+.lb-codes{font-size:11px;color:var(--muted);}
+.you-tag{font-family:var(--font-head);font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:0.08em;}
+
+/* ACTIVITY */
+.activity-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.activity-row:last-child{border-bottom:none;}
+.activity-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.activity-info{flex:1;}
+.activity-pts{font-family:var(--font-head);font-weight:900;font-size:14px;color:var(--cyan);}
+
+/* SUBMIT */
+.submit-area{background:var(--navy2);border:2px dashed var(--border2);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.15s;margin-bottom:12px;}
+.submit-area:hover{border-color:var(--cyan-border);}
+.submit-form{display:none;}
+.submit-form.open{display:block;}
+
+/* CONNECT BTNS */
+.connect-btn{width:100% !important;padding:13px 20px !important;border:none !important;border-radius:8px !important;font-family:var(--font-head) !important;font-size:15px !important;font-weight:800 !important;letter-spacing:0.06em !important;text-transform:uppercase !important;cursor:pointer !important;transition:opacity 0.15s !important;margin-bottom:8px !important;box-shadow:none !important;}
+.connect-btn:hover{opacity:0.88 !important;}
+.connect-btn.spotify{background:#1DB954 !important;color:#0d1b2e !important;}
+.connect-btn.apple{background:#fc3c44 !important;color:#ffffff !important;}
+.connect-btn.youtube{background:#FF0000 !important;color:#ffffff !important;}
+.connect-btn.soundcloud{background:#ff5500 !important;color:#ffffff !important;}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--cyan-dim);border:1px solid var(--cyan-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:900;font-size:14px;color:var(--cyan);flex-shrink:0;}
+.account-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);margin-bottom:6px;}
+.account-disconnect{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;}
+.account-disconnect:hover{border-color:var(--red);color:var(--red);}
+.taste-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:2rem;color:var(--muted);font-size:13px;}
+.empty-icon{font-size:32px;margin-bottom:8px;}
+
+@media(max-width:580px){
+  .metrics{grid-template-columns:1fr 1fr;}
+  .nav-btn{font-size:10px;padding:8px 2px;}
+  .app-body{padding:1rem 1rem 0;}
+  .site-header{padding:0 1rem;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen active">
+  <div class="loading-screen">
+    <div style="font-size:42px;">🤿</div>
+    <div class="spinner"></div>
+    <div class="loading-text">Loading...</div>
+  </div>
+</div>
+
+<!-- LOGIN / SIGNUP -->
+<div id="screen-login" class="screen">
+  <!-- wave removed to prevent click blocking -->
+  <div class="login-wrap">
+    <div>
+      <span class="logo-diver">🤿</span>
+      <div class="logo-wordmark">SUB<span>:</span>MERGED</div>
+      <div class="logo-tag">Street Team Portal</div>
+    </div>
+    <div class="login-card">
+
+      <!-- SOCIAL LOGIN — shown by default -->
+      <div id="social-login-panel">
+        <div style="font-family:var(--font-head);font-size:26px;font-weight:900;color:var(--text);margin-bottom:1.25rem;letter-spacing:0.06em;text-align:center;">SIGN IN - PARTY ON</div>
+
+        <button class="social-login-btn slb-spotify" onclick="socialLogin('spotify')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          Continue with Spotify
+        </button>
+
+        <button class="social-login-btn slb-soundcloud" onclick="socialLogin('soundcloud')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M0 13.914c0 1.752 1.317 3.176 2.988 3.176.083 0 9.722-.005 9.75-.005 1.505 0 2.726-1.259 2.726-2.813 0-.448-.104-.87-.287-1.245.123-.408.19-.84.19-1.288C15.367 9.3 13.142 7 10.383 7c-1.736 0-3.267.908-4.148 2.286C5.88 9.108 5.479 9 5.054 9 2.261 9 0 11.196 0 13.914zM17 11.108c-.393 0-.765.078-1.107.214C15.962 9.363 14.3 8 12.32 8c-.31 0-.61.04-.895.114C12.027 6.842 13.404 6 14.98 6c2.21 0 4.003 1.79 4.003 4 0 .038-.003.076-.004.114A3.5 3.5 0 0 0 17 9.5c-1.933 0-3.5 1.567-3.5 3.5s1.567 3.5 3.5 3.5S20.5 14.933 20.5 13s-1.567-3.5-3.5-3.5z"/></svg>
+          Continue with SoundCloud
+        </button>
+
+        <button class="social-login-btn slb-apple" onclick="socialLogin('apple')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple Music
+        </button>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <div class="divider-text">or</div>
+          <div class="divider-line"></div>
+        </div>
+
+        <button class="social-login-btn slb-email" onclick="showEmailLogin()">
+          ✉️ Continue with email
+        </button>
+
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to let SUB:MERGED read your music taste data to personalize your experience. We never post on your behalf.</div>
+      </div>
+
+      <!-- EMAIL FALLBACK — hidden by default -->
+      <div id="email-login-panel" style="display:none;">
+        <button onclick="showSocialLogin()" style="background:transparent;border:none;color:var(--cyan);font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:1rem;padding:0;letter-spacing:0.04em;">← Back</button>
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:1rem;">Email sign in</div>
+        <label class="field-label">Email</label>
+        <input class="field-input" id="login-email" type="email" placeholder="your@email.com" />
+        <label class="field-label">Password</label>
+        <input class="field-input" id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+        <button class="auth-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+        <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;">New rep? <span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="showEmailSignup()">Create account →</span></div>
+        <div class="auth-error" id="login-error"></div>
+      </div>
+
+      <!-- EMAIL SIGNUP — hidden by default -->
+      <div id="email-signup-panel" style="display:none;">
+        <button onclick="showEmailLogin()" style="background:transparent;border:none;color:var(--cyan);font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:1rem;padding:0;letter-spacing:0.04em;">← Back</button>
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:1rem;">Create your account</div>
+        <div class="field-row">
+          <div>
+            <label class="field-label">First name</label>
+            <input class="field-input" id="signup-first" type="text" placeholder="Jasmine" />
+          </div>
+          <div>
+            <label class="field-label">Last name</label>
+            <input class="field-input" id="signup-last" type="text" placeholder="Vega" />
+          </div>
+        </div>
+        <label class="field-label">Email</label>
+        <input class="field-input" id="signup-email" type="email" placeholder="your@email.com" />
+        <label class="field-label">Password</label>
+        <input class="field-input" id="signup-pass" type="password" placeholder="Min 6 characters" />
+        <label class="field-label">Phone (optional)</label>
+        <input class="field-input" id="signup-phone" type="tel" placeholder="+1 (555) 000-0000" />
+        <label class="field-label">Instagram handle (optional)</label>
+        <input class="field-input" id="signup-ig" type="text" placeholder="@yourhandle" />
+        <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create account</button>
+        <div class="auth-error" id="signup-error"></div>
+        <div class="auth-success" id="signup-success"></div>
+      </div>
+
+    </div>
+  </div>
+  <!-- wave removed to prevent click blocking -->
+</div>
+
+<!-- APP -->
+<div id="screen-app" class="screen">
+  <div class="app-shell">
+    <div class="site-header">
+      <div class="header-logo">SUB<span>:</span>MERGED</div>
+      <div class="header-right">
+        <div class="rep-pill">
+          <div class="rep-av" id="header-av" style="background:var(--cyan-dim);color:var(--cyan);">?</div>
+          <div class="rep-pill-name" id="header-name">Loading</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">Log out</button>
+      </div>
+    </div>
+    <div class="wave-top"></div>
+    <div class="app-body">
+      <div class="nav">
+        <button class="nav-btn active" onclick="showView('home')">My Stats</button>
+        <button class="nav-btn" onclick="showView('events')">Events</button>
+        <button class="nav-btn" onclick="showView('leaderboard')">Rankings</button>
+        <button class="nav-btn" onclick="showView('submit')">Submit</button>
+        <button class="nav-btn" onclick="showView('music')">Mix</button>
+      </div>
+
+      <!-- ── MY STATS ── -->
+      <div id="view-home" class="view active">
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">Codes sold</div>
+            <div class="metric-val" id="m-codes">—</div>
+            <div class="metric-sub">this event</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Cash earned</div>
+            <div class="metric-val" id="m-cash">—</div>
+            <div class="metric-sub">pending payout</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Total points</div>
+            <div class="metric-val" id="m-pts">—</div>
+            <div class="metric-sub">lifetime</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Content posts</div>
+            <div class="metric-val" id="m-posts">—</div>
+            <div class="metric-sub">approved</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Your rank</div>
+          <div class="rank-progress">
+            <div style="font-size:28px;" id="rank-icon">🎫</div>
+            <div style="flex:1;">
+              <div style="font-family:var(--font-head);font-size:18px;font-weight:900;" id="rank-name">Recruit</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="rank-sub">Keep selling to level up</div>
+              <div class="prog-bar"><div class="prog-fill" id="rank-prog" style="width:0%;"></div></div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:var(--font-head);font-size:22px;font-weight:900;color:var(--cyan);" id="rank-pts-val">0</div>
+              <div style="font-size:10px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">pts</div>
+            </div>
+          </div>
+          <div id="badge-row"></div>
+        </div>
+
+        <div class="card cyan-l">
+          <div class="card-title">Your promo code</div>
+          <div class="code-display">
+            <div class="code-label">Share this to earn</div>
+            <div class="code-val" id="my-code">—</div>
+            <button class="code-copy" onclick="copyCode()">Copy code</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
+            <span>Each use earns pts + cash</span>
+            <span id="rate-label" style="color:var(--cyan);font-weight:600;">$2.00 / code</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Recent activity</div>
+          <div id="activity-feed"><div class="empty"><div class="empty-icon">📭</div>No activity yet — start sharing your code!</div></div>
+        </div>
+      </div>
+
+      <!-- ── EVENTS ── -->
+      <div id="view-events" class="view">
+        <div id="events-list"><div class="empty"><div class="empty-icon">📅</div>Loading events...</div></div>
+      </div>
+
+      <!-- ── LEADERBOARD ── -->
+      <div id="view-leaderboard" class="view">
+        <div class="card">
+          <div class="card-title" id="lb-event-title">Leaderboard</div>
+          <div class="section-sub">Top reps by points this event</div>
+          <div id="lb-list"><div class="empty"><div class="empty-icon">🏆</div>Loading rankings...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Point values</div>
+          <div style="display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Code sold</span><span class="badge b-cyan">+20 pts + cash</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Social share / flyer</span><span class="badge b-purple">+50 pts</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Original content</span><span class="badge b-gold">+150 pts</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">10-code milestone</span><span class="badge b-cyan">+200 pts</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">25-code milestone</span><span class="badge b-gold">+500 pts + $10</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:13px;"><span style="color:var(--muted);">50-code milestone</span><span class="badge b-gold">+1,000 pts + $25</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUBMIT ── -->
+      <div id="view-submit" class="view">
+        <div class="card">
+          <div class="card-title">Submit content for points</div>
+          <div class="section-sub">Post on social then submit the link — we'll approve and award your points</div>
+          <div class="submit-area" onclick="openSubmitForm()">
+            <div style="font-size:32px;margin-bottom:8px;">📲</div>
+            <div style="font-family:var(--font-head);font-size:15px;font-weight:700;">Drop a link to your post</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Instagram · TikTok · Facebook · YouTube</div>
+          </div>
+          <div class="submit-form" id="submit-form">
+            <label class="field-label">Post URL</label>
+            <input class="field-input" id="sub-url" type="url" placeholder="https://instagram.com/p/..." style="margin-bottom:10px;" />
+            <label class="field-label">Platform</label>
+            <select class="field-input" id="sub-platform" style="margin-bottom:10px;">
+              <option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option>
+              <option value="facebook">Facebook</option>
+              <option value="youtube">YouTube</option>
+              <option value="twitter">Twitter / X</option>
+            </select>
+            <label class="field-label">Content type</label>
+            <select class="field-input" id="sub-type" style="margin-bottom:10px;">
+              <option value="flyer_share">Flyer share (+50 pts)</option>
+              <option value="original_content">Original content (+150 pts)</option>
+            </select>
+            <label class="field-label">Event</label>
+            <select class="field-input" id="sub-event" style="margin-bottom:14px;"></select>
+            <button class="auth-btn" onclick="submitContent()">Submit for review</button>
+            <div class="auth-error" id="sub-error"></div>
+            <div class="auth-success" id="sub-success"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Your submissions</div>
+          <div id="submissions-list"><div class="empty"><div class="empty-icon">📭</div>No submissions yet</div></div>
+        </div>
+      </div>
+
+      <!-- ── MUSIC ── -->
+      <div id="view-music" class="view">
+        <div id="music-disconnected">
+          <div class="card" style="text-align:center;padding:2rem 1.5rem;">
+            <div style="font-size:48px;margin-bottom:1rem;">🎧</div>
+            <div style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:8px;">SUB:MERGED Weekly Mix</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">Connect your music and your taste shapes the team's weekly playlist. Higher rank = more influence.</div>
+            <div style="max-width:300px;margin:0 auto;">
+              <button class="connect-btn spotify" onclick="connectMusic('spotify')">Connect Spotify</button>
+              <button class="connect-btn apple" onclick="connectMusic('apple')">Connect Apple Music</button>
+              <button class="connect-btn youtube" onclick="connectMusic('youtube')">Connect YouTube Music</button>
+              <button class="connect-btn soundcloud" onclick="connectMusic('soundcloud')">Connect SoundCloud</button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1.25rem;">Read-only access — we never post or modify anything</div>
+          </div>
+          <div class="card">
+            <div class="card-title">How the mix works</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;gap:12px;"><div class="step-num">1</div><div><div style="font-weight:600;font-size:13px;">Connect your accounts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">We pull your top tracks and taste profile</div></div></div>
+              <div style="display:flex;gap:12px;"><div class="step-num">2</div><div><div style="font-weight:600;font-size:13px;">Your taste shapes the mix</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Every Sunday we blend the whole team's data into one playlist</div></div></div>
+              <div style="display:flex;gap:12px;"><div class="step-num">3</div><div><div style="font-weight:600;font-size:13px;">Higher rank = more influence</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Legend reps have 3x the influence vs Recruits</div></div></div>
+              <div style="display:flex;gap:12px;"><div class="step-num">4</div><div><div style="font-weight:600;font-size:13px;">Share the mix for +50 pts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Drops every Sunday on the SUB:MERGED Spotify page</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div id="music-connected" style="display:none;">
+          <div class="card cyan-l">
+            <div class="card-title">Connected accounts</div>
+            <div id="connected-accounts"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Your taste profile</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;" id="taste-tags"></div>
+            <div id="taste-bars"></div>
+          </div>
+          <div class="card" style="border-color:var(--cyan-border);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+              <div>
+                <div style="font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">This week's mix</div>
+                <div style="font-family:var(--font-head);font-size:22px;font-weight:900;">SUB:MERGED Vol. 12</div>
+                <div style="font-family:var(--font-head);font-size:13px;color:var(--cyan);font-weight:600;margin-top:2px;">Week of Apr 7, 2026 · 24 tracks · 1h 38m</div>
+              </div>
+              <div style="background:var(--cyan);width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🌊</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button style="flex:1;padding:10px;background:#1DB954;border:none;border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:white;cursor:pointer;">Open in Spotify</button>
+              <button onclick="shareMix(this)" style="flex:1;padding:10px;background:var(--cyan-dim);border:1px solid var(--cyan-border);border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--cyan);cursor:pointer;">Share +50 pts</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="wave-bot" style="margin-top:2rem;"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// SUPABASE INIT
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
+
+let sb;
+function initSupabase() {
+  if (typeof supabase === 'undefined') {
+    console.error('Supabase library not loaded yet');
+    setTimeout(initSupabase, 500);
+    return;
+  }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  console.log('Supabase client initialized');
+  boot();
+}
+
+let currentUser = null;
+let currentRep = null;
+let allEvents = [];
+let musicConnected = {};
+
+// ══════════════════════════════════════════════════════
+// BOOT — check session on load
+// ══════════════════════════════════════════════════════
+async function boot() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      await loadRep();
+      showScreen('app');
+      if (currentRep) initMusicState();
+      const pending = sessionStorage.getItem('pendingMusicConnect');
+      if (pending) { sessionStorage.removeItem('pendingMusicConnect'); setTimeout(()=>{ showView('music'); connectMusic(pending); }, 600); }
+    } else {
+      // Check URL for OAuth error params
+      const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace('#',''));
+      const error = params.get('error') || hashParams.get('error');
+      const errorDesc = params.get('error_description') || hashParams.get('error_description');
+      if (error) {
+        console.error('OAuth error:', error, errorDesc);
+        // Clear the error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      showScreen('login');
+    }
+  } catch(err) {
+    console.error('Boot error:', err);
+    showScreen('login');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// AUTH — social login panel navigation
+// ══════════════════════════════════════════════════════
+function showSocialLogin() {
+  document.getElementById('social-login-panel').style.display = 'block';
+  document.getElementById('email-login-panel').style.display = 'none';
+  document.getElementById('email-signup-panel').style.display = 'none';
+}
+function showEmailLogin() {
+  document.getElementById('social-login-panel').style.display = 'none';
+  document.getElementById('email-login-panel').style.display = 'block';
+  document.getElementById('email-signup-panel').style.display = 'none';
+}
+function showEmailSignup() {
+  document.getElementById('social-login-panel').style.display = 'none';
+  document.getElementById('email-login-panel').style.display = 'none';
+  document.getElementById('email-signup-panel').style.display = 'block';
+}
+
+async function socialLogin(service) {
+  const providers = { spotify: 'spotify', apple: 'apple', soundcloud: null };
+  // Supabase OAuth — in production this triggers real OAuth redirect
+  // For now we show a friendly message and fall back to email signup
+  // Once you enable the provider in Supabase Auth settings it works automatically
+  const btn = event.target.closest('button');
+  const origText = btn.innerHTML;
+  btn.innerHTML = '⏳ Connecting...';
+  btn.disabled = true;
+
+  if (service === 'soundcloud') {
+    // SoundCloud not yet in Supabase OAuth — use email flow but flag the service
+    setTimeout(()=>{
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      showEmailSignup();
+      // Store intent so we auto-connect SoundCloud after signup
+      sessionStorage.setItem('pendingMusicConnect', 'soundcloud');
+    }, 800);
+    return;
+  }
+
+  const providerMap = { spotify: 'spotify', apple: 'apple' };
+  const provider = providerMap[service];
+
+  const { data, error } = await sb.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: 'https://submerged-crew.shaun-6ad.workers.dev' }
+  });
+
+  if (error) {
+    btn.innerHTML = origText;
+    btn.disabled = false;
+    // Provider not enabled in Supabase yet — fall back gracefully
+    showEmailSignup();
+    sessionStorage.setItem('pendingMusicConnect', service);
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    err.textContent = error.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+    return;
+  }
+  currentUser = data.user;
+  await loadRep();
+  showScreen('app');
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+
+async function doSignup() {
+  const first = document.getElementById('signup-first').value.trim();
+  const last = document.getElementById('signup-last').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const phone = document.getElementById('signup-phone').value.trim();
+  const ig = document.getElementById('signup-ig').value.trim();
+  const btn = document.getElementById('signup-btn');
+  const err = document.getElementById('signup-error');
+  const suc = document.getElementById('signup-success');
+  err.style.display = 'none'; suc.style.display = 'none';
+  if (!first || !last || !email || !pass) { err.textContent = 'Please fill in all required fields.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  if (error) {
+    err.textContent = error.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Request to Join';
+    return;
+  }
+  // Generate promo code: first 4 letters + 2 digit number
+  const code = (first.substring(0,4) + Math.floor(10+Math.random()*89)).toUpperCase().replace(/[^A-Z0-9]/g,'');
+  await sb.from('reps').insert({
+    user_id: data.user.id,
+    name: first + ' ' + last,
+    email,
+    phone: phone || null,
+    instagram: ig || null,
+    promo_code: code,
+    rank: 'Recruit',
+    lifetime_points: 0
+  });
+  suc.textContent = 'Account created! Check your email to confirm, then sign in.';
+  suc.style.display = 'block';
+  btn.disabled = false; btn.textContent = 'Request to Join';
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null; currentRep = null;
+  showScreen('login');
+}
+
+// ══════════════════════════════════════════════════════
+// LOAD REP DATA
+// ══════════════════════════════════════════════════════
+async function loadRep() {
+  const { data } = await sb.from('reps').select('*').eq('user_id', currentUser.id).single();
+  currentRep = data;
+
+  // No rep profile yet — auto-create from OAuth metadata (Spotify login)
+  if (!currentRep) {
+    const meta = currentUser.user_metadata || {};
+    // Pull name from Spotify metadata — falls back to email username
+    const fullName = meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'New Rep';
+    const parts = fullName.trim().split(' ');
+    const first = parts[0] || 'Rep';
+    const last = parts[1] || '';
+
+    // Auto-generate promo code: first 4 letters + 2 random digits
+    const base = (first.substring(0,4) + Math.floor(10+Math.random()*89)).toUpperCase().replace(/[^A-Z0-9]/g,'');
+
+    // Auto-connect Spotify since they just logged in with it
+    const { data: newRep, error } = await sb.from('reps').insert({
+      user_id: currentUser.id,
+      name: fullName,
+      email: currentUser.email || '',
+      promo_code: base,
+      rank: 'Recruit',
+      lifetime_points: 0,
+      spotify_connected: true
+    }).select().single();
+
+    if (error) {
+      console.error('Failed to create rep profile:', error);
+      showScreen('login');
+      return;
+    }
+    currentRep = newRep;
+
+    // Auto-connect Spotify in music state
+    musicConnected['spotify'] = true;
+  }
+
+  renderHeader();
+  await Promise.all([loadStats(), loadEvents()]);
+}
+
+function renderHeader() {
+  const initials = currentRep.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  const av = document.getElementById('header-av');
+  av.textContent = initials;
+  document.getElementById('header-name').textContent = currentRep.name.split(' ')[0];
+  renderRankStyle(av);
+}
+
+function renderRankStyle(el) {
+  const rank = currentRep.rank;
+  const styles = {
+    'Legend': {bg:'rgba(240,180,41,0.15)',color:'#f0b429'},
+    'Closer': {bg:'rgba(0,212,200,0.1)',color:'#00D4C8'},
+    'Hotshot': {bg:'rgba(167,139,250,0.1)',color:'#a78bfa'},
+    'Rising Star': {bg:'rgba(34,197,94,0.1)',color:'#22c55e'},
+    'Recruit': {bg:'rgba(255,255,255,0.05)',color:'#7a8799'}
+  };
+  const s = styles[rank] || styles['Recruit'];
+  if (el) { el.style.background = s.bg; el.style.color = s.color; }
+  return s;
+}
+
+// ══════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════
+async function loadStats() {
+  // Get active event participation
+  const { data: repEvents } = await sb.from('rep_events')
+    .select('*, events(name,status)').eq('rep_id', currentRep.id);
+
+  const activeEvent = repEvents?.find(re => re.events?.status === 'active');
+  const totalCodes = repEvents?.reduce((s,re) => s + re.codes_sold, 0) || 0;
+  const totalCash = repEvents?.reduce((s,re) => s + parseFloat(re.cash_earned||0), 0) || 0;
+
+  document.getElementById('m-codes').textContent = activeEvent?.codes_sold || 0;
+  document.getElementById('m-cash').textContent = '$' + totalCash.toFixed(0);
+  document.getElementById('m-pts').textContent = currentRep.lifetime_points.toLocaleString();
+
+  // Content count
+  const { count } = await sb.from('content_submissions')
+    .select('*', {count:'exact',head:true})
+    .eq('rep_id', currentRep.id).eq('status', 'approved');
+  document.getElementById('m-posts').textContent = count || 0;
+
+  renderRankCard();
+  renderActivityFeed();
+}
+
+function renderRankCard() {
+  const rank = currentRep.rank;
+  const pts = currentRep.lifetime_points;
+  const tiers = [
+    {name:'Recruit',icon:'🎫',color:'var(--muted)',min:0,max:400,sub:'Sell codes to level up to Rising Star',prog:Math.min(100,Math.round((pts/400)*100))},
+    {name:'Rising Star',icon:'🌟',color:'#22c55e',min:400,max:1000,sub:'Keep going — Hotshot unlocks $2.50/code',prog:Math.min(100,Math.round(((pts-400)/600)*100))},
+    {name:'Hotshot',icon:'⚡',color:'#a78bfa',min:1000,max:2500,sub:'Reach Closer for $3/code + cash bonuses',prog:Math.min(100,Math.round(((pts-1000)/1500)*100))},
+    {name:'Closer',icon:'🔥',color:'#00D4C8',min:2500,max:5000,sub:'Almost at Legend — the top of the team',prog:Math.min(100,Math.round(((pts-2500)/2500)*100))},
+    {name:'Legend',icon:'👑',color:'#f0b429',min:5000,max:5000,sub:'Top tier — $3/code + VIP guest list',prog:100},
+  ];
+  const tier = tiers.find(t=>t.name===rank) || tiers[0];
+  document.getElementById('rank-icon').textContent = tier.icon;
+  document.getElementById('rank-name').textContent = rank;
+  document.getElementById('rank-name').style.color = tier.color;
+  document.getElementById('rank-sub').textContent = tier.sub;
+  document.getElementById('rank-pts-val').textContent = pts.toLocaleString();
+  document.getElementById('rank-prog').style.width = tier.prog + '%';
+  document.getElementById('rank-prog').style.background = tier.color;
+  document.getElementById('my-code').textContent = currentRep.promo_code;
+  const rates = {'Legend':'$3.00','Closer':'$3.00','Hotshot':'$2.50'};
+  document.getElementById('rate-label').textContent = (rates[rank]||'$2.00') + ' / code at ' + rank + ' rank';
+}
+
+async function renderActivityFeed() {
+  const { data } = await sb.from('points_log')
+    .select('*').eq('rep_id', currentRep.id)
+    .order('created_at', {ascending:false}).limit(8);
+  const feed = document.getElementById('activity-feed');
+  if (!data || data.length === 0) {
+    feed.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No activity yet — start sharing your code!</div>';
+    return;
+  }
+  const icons = {sale:'🎫',content_share:'📸',content_original:'🎥',milestone_10:'💫',milestone_25:'💫',milestone_50:'💫',sellout_bonus:'🚀',mix_share:'🎵'};
+  const colors = {sale:'var(--cyan-dim)',content_share:'var(--green-dim)',content_original:'var(--green-dim)',milestone_10:'var(--gold-dim)',milestone_25:'var(--gold-dim)',milestone_50:'var(--gold-dim)',sellout_bonus:'var(--purple-dim)',mix_share:'var(--cyan-dim)'};
+  feed.innerHTML = data.map(a => `
+    <div class="activity-row">
+      <div class="activity-icon" style="background:${colors[a.type]||'var(--surface2)'};">${icons[a.type]||'📌'}</div>
+      <div class="activity-info">
+        <div style="font-weight:500;font-size:13px;color:var(--text);">${a.description||a.type}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="activity-pts">+${a.points} pts${a.cash>0?' +$'+parseFloat(a.cash).toFixed(0):''}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════════════════
+async function loadEvents() {
+  const { data: events } = await sb.from('events').select('*').order('date');
+  allEvents = events || [];
+  const { data: repEvents } = await sb.from('rep_events').select('*').eq('rep_id', currentRep.id);
+  const joinedIds = new Set((repEvents||[]).map(re=>re.event_id));
+  renderEvents(events, joinedIds, repEvents);
+  renderLeaderboard(events);
+  populateSubmitEventSelect(events);
+}
+
+function renderEvents(events, joinedIds, repEvents) {
+  const el = document.getElementById('events-list');
+  if (!events || events.length === 0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No events yet</div>'; return; }
+  el.innerHTML = events.map(ev => {
+    const joined = joinedIds.has(ev.id);
+    const re = repEvents?.find(r=>r.event_id===ev.id);
+    const pct = Math.round((ev.tickets_sold/ev.capacity)*100);
+    const isLive = ev.status === 'active';
+    return `<div class="event-card ${joined?'joined':''}">
+      <div class="event-banner" style="background:linear-gradient(135deg,#0d2535,#0a3040);">
+        ${ev.banner_emoji||'🎵'}
+        <div class="pill ${isLive?'pill-live':'pill-upcoming'}">${isLive?'Live':'Upcoming'}</div>
+        ${joined?'<div class="pill pill-joined">✓ Joined</div>':''}
+      </div>
+      <div class="event-body">
+        <div class="event-name">${ev.name}</div>
+        <div class="event-date">${new Date(ev.date+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'})} @ ${ev.venue.toUpperCase()}</div>
+        <div class="event-venue">${ev.venue} · ${ev.city||''}</div>
+        <div style="margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Capacity</span><span>${pct}% sold</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;"></div></div>
+        </div>
+        <div class="event-footer">
+          <div style="display:flex;gap:16px;">
+            <div><div class="ev-stat-val">${re?.codes_sold||0}</div><div class="ev-stat-label">Your codes</div></div>
+            <div><div class="ev-stat-val">$${parseFloat(re?.cash_earned||0).toFixed(0)}</div><div class="ev-stat-label">Earned</div></div>
+            <div><div class="ev-stat-val">${ev.capacity}</div><div class="ev-stat-label">Capacity</div></div>
+          </div>
+          <button class="join-btn" ${joined?'disabled':''} onclick="joinEvent('${ev.id}',this)">${joined?'✓ Active':'Join campaign'}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function joinEvent(eventId, btn) {
+  btn.disabled = true; btn.textContent = 'Joining...';
+  const { error } = await sb.from('rep_events').insert({ rep_id: currentRep.id, event_id: eventId });
+  if (!error) {
+    btn.textContent = '✓ Active';
+    btn.closest('.event-card').classList.add('joined');
+    const banner = btn.closest('.event-card').querySelector('.event-banner');
+    const pill = document.createElement('div');
+    pill.className = 'pill pill-joined'; pill.textContent = '✓ Joined';
+    banner.appendChild(pill);
+  } else {
+    btn.disabled = false; btn.textContent = 'Join campaign';
+  }
+}
+
+async function renderLeaderboard(events) {
+  const activeEvent = events?.find(e=>e.status==='active');
+  if (!activeEvent) { document.getElementById('lb-list').innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No active event</div>'; return; }
+  document.getElementById('lb-event-title').textContent = activeEvent.name + ' · Live rankings';
+  const { data } = await sb.from('rep_events')
+    .select('*, reps(name, rank, promo_code)')
+    .eq('event_id', activeEvent.id)
+    .order('points_earned', {ascending:false}).limit(10);
+  if (!data || data.length === 0) { document.getElementById('lb-list').innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps have joined yet — be the first!</div>'; return; }
+  const rankColors = {'Legend':'rgba(240,180,41,0.15)','Closer':'var(--cyan-dim)','Hotshot':'var(--purple-dim)','Rising Star':'var(--green-dim)','Recruit':'var(--surface3)'};
+  const rankText = {'Legend':'#f0b429','Closer':'#00D4C8','Hotshot':'#a78bfa','Rising Star':'#22c55e','Recruit':'#7a8799'};
+  const rankNums = ['r1','r2','r3'];
+  document.getElementById('lb-list').innerHTML = data.map((re,i) => {
+    const isMe = re.rep_id === currentRep.id;
+    const rep = re.reps;
+    const initials = rep.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    const maxPts = data[0]?.points_earned || 1;
+    const pct = Math.round((re.points_earned/maxPts)*100);
+    return `<div class="lb-row ${isMe?'me':''}">
+      <div class="lb-rank ${rankNums[i]||''}">${i+1}</div>
+      <div class="av" style="background:${rankColors[rep.rank]||'var(--surface3)'};color:${rankText[rep.rank]||'#7a8799'};">${initials}</div>
+      <div class="lb-info">
+        <div class="lb-name">${rep.name}${isMe?' <span class="you-tag">· YOU</span>':''}</div>
+        <div class="lb-sub">${rep.rank} · ${re.codes_sold} codes</div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;${i===0?'background:var(--gold);':''}"></div></div>
+      </div>
+      <div class="lb-right">
+        <div class="lb-pts">${re.points_earned.toLocaleString()}</div>
+        <div class="lb-codes">pts this event</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateSubmitEventSelect(events) {
+  const sel = document.getElementById('sub-event');
+  sel.innerHTML = events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// CONTENT SUBMISSION
+// ══════════════════════════════════════════════════════
+function openSubmitForm() {
+  const form = document.getElementById('submit-form');
+  form.classList.toggle('open');
+  document.querySelector('.submit-area').style.display = form.classList.contains('open') ? 'none' : 'block';
+}
+
+async function submitContent() {
+  const url = document.getElementById('sub-url').value.trim();
+  const platform = document.getElementById('sub-platform').value;
+  const type = document.getElementById('sub-type').value;
+  const eventId = document.getElementById('sub-event').value;
+  const err = document.getElementById('sub-error');
+  const suc = document.getElementById('sub-success');
+  err.style.display = 'none'; suc.style.display = 'none';
+  if (!url) { err.textContent = 'Please enter the post URL.'; err.style.display = 'block'; return; }
+  const { error } = await sb.from('content_submissions').insert({
+    rep_id: currentRep.id, event_id: eventId, platform, content_type: type, url, status: 'pending'
+  });
+  if (error) { err.textContent = 'Submission failed. Try again.'; err.style.display = 'block'; return; }
+  suc.textContent = 'Submitted! We\'ll review and award your points within 24 hours.';
+  suc.style.display = 'block';
+  document.getElementById('sub-url').value = '';
+  loadSubmissions();
+}
+
+async function loadSubmissions() {
+  const { data } = await sb.from('content_submissions')
+    .select('*, events(name)').eq('rep_id', currentRep.id)
+    .order('submitted_at', {ascending:false}).limit(10);
+  const el = document.getElementById('submissions-list');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No submissions yet</div>'; return; }
+  const statusBadge = {approved:'b-green',pending:'b-gold',rejected:'b-gray'};
+  const typeIcon = {flyer_share:'📸',original_content:'🎥'};
+  const typePts = {flyer_share:'+50 pts',original_content:'+150 pts'};
+  el.innerHTML = data.map(s=>`
+    <div class="activity-row">
+      <div class="activity-icon" style="background:var(--surface2);">${typeIcon[s.content_type]||'📌'}</div>
+      <div class="activity-info">
+        <div style="font-weight:500;font-size:13px;color:var(--text);">${s.platform} — ${s.content_type.replace('_',' ')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${s.events?.name||''} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
+        <span class="badge ${statusBadge[s.status]||'b-gray'}" style="margin-top:4px;">${s.status}</span>
+      </div>
+      <div class="activity-pts">${s.status==='approved'?typePts[s.content_type]:''}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// MUSIC
+// ══════════════════════════════════════════════════════
+async function connectMusic(service) {
+  musicConnected[service] = true;
+  const update = {};
+  update[service+'_connected'] = true;
+  await sb.from('reps').update(update).eq('id', currentRep.id);
+  currentRep[service+'_connected'] = true;
+  renderMusicConnected();
+}
+
+function renderMusicConnected() {
+  const anyConnected = Object.values(musicConnected).some(v=>v);
+  document.getElementById('music-disconnected').style.display = anyConnected ? 'none' : 'block';
+  document.getElementById('music-connected').style.display = anyConnected ? 'block' : 'none';
+  if (!anyConnected) return;
+  const services = {spotify:{label:'Spotify',bg:'#1DB954',icon:'🎵',meta:'Top tracks synced'},apple:{label:'Apple Music',bg:'#fc3c44',icon:'🎵',meta:'Library synced'},youtube:{label:'YouTube Music',bg:'#FF0000',icon:'▶',meta:'Likes & history synced'},soundcloud:{label:'SoundCloud',bg:'#ff5500',icon:'☁️',meta:'Liked tracks synced'}};
+  document.getElementById('connected-accounts').innerHTML = Object.entries(musicConnected).filter(([,v])=>v).map(([k])=>{
+    const s = services[k];
+    return `<div class="account-row"><div style="width:32px;height:32px;border-radius:6px;background:${s.bg};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${s.icon}</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${s.label}</div><div style="font-size:11px;color:var(--muted);margin-top:1px;">${s.meta}</div></div><button class="account-disconnect" onclick="disconnectMusic('${k}')">Disconnect</button></div>`;
+  }).join('');
+  const tasteTags = ['House','Techno','Deep House','Melodic','Progressive'];
+  document.getElementById('taste-tags').innerHTML = tasteTags.map(t=>`<span class="badge b-cyan">${t}</span>`).join('');
+  document.getElementById('taste-bars').innerHTML = ['Energy','Danceability','Bass weight','Tempo avg'].map((l,i)=>{
+    const pct = [84,90,72,78][i];
+    return `<div><div class="taste-bar-label"><span style="font-size:12px;">${l}</span><span style="font-size:12px;color:var(--cyan);font-family:var(--font-head);font-weight:700;">${pct}%</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;"></div></div></div>`;
+  }).join('');
+}
+
+async function disconnectMusic(service) {
+  delete musicConnected[service];
+  const update = {}; update[service+'_connected'] = false;
+  await sb.from('reps').update(update).eq('id', currentRep.id);
+  renderMusicConnected();
+}
+
+function shareMix(btn) {
+  btn.textContent = '✓ Shared! +50 pts';
+  btn.style.background = 'var(--green-dim)';
+  btn.style.borderColor = 'rgba(34,197,94,0.3)';
+  btn.style.color = 'var(--green)';
+}
+
+// ══════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  if (id==='app') { showView('home'); loadSubmissions(); }
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  const idx = ['home','events','leaderboard','submit','music'].indexOf(id);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+}
+
+function copyCode() {
+  if (currentRep?.promo_code) {
+    navigator.clipboard.writeText(currentRep.promo_code).catch(()=>{});
+    const btn = document.querySelector('.code-copy');
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>btn.textContent='Copy code', 2000);
+  }
+}
+
+// Check music connections from DB on load
+function initMusicState() {
+  if (!currentRep) return;
+  ['spotify','apple','youtube','soundcloud'].forEach(s=>{ if(currentRep[s+'_connected']) musicConnected[s]=true; });
+  if (Object.values(musicConnected).some(v=>v)) renderMusicConnected();
+}
+
+// ══════════════════════════════════════════════════════
+// KICK OFF
+// ══════════════════════════════════════════════════════
+// Boot is now called from initSupabase() after library loads
+window.addEventListener('load', function() {
+  // Give CDN scripts a moment to execute after load
+  setTimeout(initSupabase, 100);
+});
+</script>
+</body>
+</html>
