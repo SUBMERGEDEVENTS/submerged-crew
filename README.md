@@ -67,3 +67,14 @@ See `docs/EVENTS.md` and `docs/product_events.sql`. Client helper: `js/analytics
 - Static HTML/JS UI
 - Supabase Auth + data
 - Cloudflare Workers static assets (`wrangler.jsonc`)
+
+## Production
+- Live: https://submerged-crew.shaun-6ad.workers.dev
+- Demo tenant: https://submerged-crew.shaun-6ad.workers.dev/?tenant=acme-demo
+- Auto-deploys from `main` via Cloudflare Workers Builds
+
+## Trial clients
+See [docs/TRIAL_ONBOARDING.md](docs/TRIAL_ONBOARDING.md) for the 2–3 client trial wave checklist and pasteable invite.
+
+Static deploys respect [.assetsignore](.assetsignore) so `.git` and other junk are not uploaded as assets.
+

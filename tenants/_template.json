@@ -1,0 +1,22 @@
+{
+  "slug": "client-slug",
+  "name": "Client Display Name",
+  "tagline": "Street Team Portal",
+  "brand": {
+    "cyan": "#00D4C8",
+    "navy": "#0d1b2e",
+    "gold": "#f0b429",
+    "purple": "#a78bfa"
+  },
+  "logoUrl": null,
+  "supportContact": "ops@example.com",
+  "supabaseUrl": "https://khisgmozkufnzapmldgc.supabase.co",
+  "supabaseAnonKey": "REPLACE_WITH_SAME_ANON_KEY_AS_submerged.json",
+  "featureFlags": {
+    "weeklyMix": true,
+    "points": true
+  },
+  "copy": {
+    "productName": "Street Team Portal"
+  }
+}
