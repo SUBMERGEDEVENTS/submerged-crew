@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin · SUB:MERGED</title>
+<script src="js/tenant.js"></script>
+<script src="js/analytics.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -150,8 +152,8 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <div class="login-wrap">
     <div style="text-align:center;margin-bottom:2rem;">
       <div style="font-size:42px;">🤿</div>
-      <div style="font-family:var(--font-head);font-size:34px;font-weight:900;letter-spacing:0.06em;">SUB<span style="color:var(--cyan);">:</span>MERGED</div>
-      <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cyan);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Admin Dashboard</div>
+      <div data-tenant-name style="font-family:var(--font-head);font-size:34px;font-weight:900;letter-spacing:0.06em;">SUB<span style="color:var(--cyan);">:</span>MERGED</div>
+      <div data-tenant-tagline style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cyan);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Admin Dashboard</div>
     </div>
     <div class="login-card">
       <div class="login-title">Admin Sign In</div>
@@ -171,7 +173,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <div class="shell">
     <div class="header">
       <div style="display:flex;align-items:center;gap:12px;">
-        <div class="header-logo">SUB<span>:</span>MERGED</div>
+        <div class="header-logo" data-tenant-name>SUB<span>:</span>MERGED</div>
         <div class="header-tag">Admin</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -435,24 +437,45 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 let sb, currentAdmin, allEvents = [], allReps = [];
 
+function whenTenantReady(cb) {
+  if (window.__tenantLoaded) { cb(); return; }
+  document.addEventListener('tenantready', function onReady() {
+    document.removeEventListener('tenantready', onReady);
+    cb();
+  });
+}
+
 window.addEventListener('load', () => {
-  setTimeout(async () => {
-    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) { currentAdmin = session.user; showApp(); }
-    else showScreen('login');
+  setTimeout(() => {
+    whenTenantReady(async () => {
+      var url = (window.AppTenant && window.AppTenant.supabaseUrl) || SUPABASE_URL;
+      var key = (window.AppTenant && window.AppTenant.supabaseAnonKey) || SUPABASE_ANON;
+      sb = supabase.createClient(url, key);
+      window.sb = sb;
+      if (typeof analyticsReady === 'function') analyticsReady();
+      if (typeof track === 'function') track('app_boot', { page: 'admin' });
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) { currentAdmin = session.user; showApp(); }
+      else showScreen('login');
+    });
   }, 200);
 });
 
 // ── AUTH ──
 async function adminLogin() {
+  if (typeof track === 'function') track('admin_login_start', {});
   const email = document.getElementById('admin-email').value.trim();
   const pass = document.getElementById('admin-pass').value;
   const err = document.getElementById('login-err');
   err.style.display = 'none';
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  if (error) {
+    err.textContent = error.message; err.style.display = 'block';
+    if (typeof track === 'function') track('login_error', { method: 'admin_email', message: error.message });
+    return;
+  }
   currentAdmin = data.user;
+  if (typeof track === 'function') track('admin_login_success', {});
   showApp();
 }
 
