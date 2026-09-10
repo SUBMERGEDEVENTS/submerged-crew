@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Street Team Portal · SUB:MERGED</title>
+<script src="js/tenant.js"></script>
+<script src="js/analytics.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
 // Load Supabase with fallback CDNs
@@ -241,8 +243,8 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <div class="login-wrap">
     <div>
       <span class="logo-diver">🤿</span>
-      <div class="logo-wordmark">SUB<span>:</span>MERGED</div>
-      <div class="logo-tag">Street Team Portal</div>
+      <div class="logo-wordmark" data-tenant-name>SUB<span>:</span>MERGED</div>
+      <div class="logo-tag" data-tenant-tagline>Street Team Portal</div>
     </div>
     <div class="login-card">
 
@@ -275,7 +277,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           ✉️ Continue with email
         </button>
 
-        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to let SUB:MERGED read your music taste data to personalize your experience. We never post on your behalf.</div>
+        <div data-tenant-consent style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to let SUB:MERGED read your music taste data to personalize your experience. We never post on your behalf.</div>
       </div>
 
       <!-- EMAIL FALLBACK — hidden by default -->
@@ -327,7 +329,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 <div id="screen-app" class="screen">
   <div class="app-shell">
     <div class="site-header">
-      <div class="header-logo">SUB<span>:</span>MERGED</div>
+      <div class="header-logo" data-tenant-name>SUB<span>:</span>MERGED</div>
       <div class="header-right">
         <div class="rep-pill">
           <div class="rep-av" id="header-av" style="background:var(--cyan-dim);color:var(--cyan);">?</div>
@@ -530,21 +532,35 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
 <script>
 // ══════════════════════════════════════════════════════
-// SUPABASE INIT
+// SUPABASE INIT (tenant-aware)
 // ══════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
 
 let sb;
+function whenTenantReady(cb) {
+  if (window.__tenantLoaded) { cb(); return; }
+  document.addEventListener('tenantready', function onReady() {
+    document.removeEventListener('tenantready', onReady);
+    cb();
+  });
+}
 function initSupabase() {
   if (typeof supabase === 'undefined') {
     console.error('Supabase library not loaded yet');
     setTimeout(initSupabase, 500);
     return;
   }
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-  console.log('Supabase client initialized');
-  boot();
+  whenTenantReady(function () {
+    var url = (window.AppTenant && window.AppTenant.supabaseUrl) || SUPABASE_URL;
+    var key = (window.AppTenant && window.AppTenant.supabaseAnonKey) || SUPABASE_ANON;
+    sb = supabase.createClient(url, key);
+    window.sb = sb;
+    console.log('Supabase client initialized for tenant', window.AppTenant && window.AppTenant.slug);
+    if (typeof analyticsReady === 'function') analyticsReady();
+    if (typeof track === 'function') track('app_boot', { page: 'portal' });
+    boot();
+  });
 }
 
 let currentUser = null;
@@ -604,6 +620,7 @@ function showEmailSignup() {
 }
 
 async function socialLogin(service) {
+  if (typeof track === 'function') track('login_start', { method: service });
   const providers = { spotify: 'spotify', apple: 'apple', soundcloud: null };
   // Supabase OAuth — in production this triggers real OAuth redirect
   // For now we show a friendly message and fall back to email signup
@@ -643,6 +660,7 @@ async function socialLogin(service) {
 }
 
 async function doLogin() {
+  if (typeof track === 'function') track('login_start', { method: 'email' });
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   const btn = document.getElementById('login-btn');
@@ -653,15 +671,18 @@ async function doLogin() {
   if (error) {
     err.textContent = error.message; err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Sign In';
+    if (typeof track === 'function') track('login_error', { method: 'email', message: error.message });
     return;
   }
   currentUser = data.user;
+  if (typeof track === 'function') track('login_success', { method: 'email' });
   await loadRep();
   showScreen('app');
   btn.disabled = false; btn.textContent = 'Sign In';
 }
 
 async function doSignup() {
+  if (typeof track === 'function') track('signup_start', {});
   const first = document.getElementById('signup-first').value.trim();
   const last = document.getElementById('signup-last').value.trim();
   const email = document.getElementById('signup-email').value.trim();
@@ -692,6 +713,7 @@ async function doSignup() {
     rank: 'Recruit',
     lifetime_points: 0
   });
+  if (typeof track === 'function') track('signup_success', {});
   suc.textContent = 'Account created! Check your email to confirm, then sign in.';
   suc.style.display = 'block';
   btn.disabled = false; btn.textContent = 'Request to Join';
@@ -893,6 +915,7 @@ async function joinEvent(eventId, btn) {
   btn.disabled = true; btn.textContent = 'Joining...';
   const { error } = await sb.from('rep_events').insert({ rep_id: currentRep.id, event_id: eventId });
   if (!error) {
+    if (typeof track === 'function') track('join_event', { event_id: eventId });
     btn.textContent = '✓ Active';
     btn.closest('.event-card').classList.add('joined');
     const banner = btn.closest('.event-card').querySelector('.event-banner');
@@ -1051,6 +1074,7 @@ function showView(id) {
   document.getElementById('view-'+id).classList.add('active');
   const idx = ['home','events','leaderboard','submit','music'].indexOf(id);
   document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (typeof track === 'function') track('view_change', { view: id });
 }
 
 function copyCode() {

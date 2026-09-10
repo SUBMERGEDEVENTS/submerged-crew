@@ -1,0 +1,23 @@
+{
+  "slug": "acme-demo",
+  "name": "ACME CREW",
+  "brand": {
+    "cyan": "#FF6B35",
+    "navy": "#1a0a2e",
+    "navy2": "#12071f"
+  },
+  "supabaseUrl": "https://khisgmozkufnzapmldgc.supabase.co",
+  "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c",
+  "featureFlags": {
+    "socialLogin": true,
+    "musicMix": true,
+    "adminAi": false,
+    "leaderboard": true
+  },
+  "copy": {
+    "tagline": "Street Team Portal",
+    "adminTagline": "Admin Dashboard",
+    "consentNote": "By continuing you agree to let ACME CREW read your music taste data to personalize your experience. We never post on your behalf.",
+    "_note": "Demo tenant reuses the shared SUB:MERGED Supabase backend for Phase 1. Replace supabaseUrl/supabaseAnonKey for a dedicated trial client."
+  }
+}
