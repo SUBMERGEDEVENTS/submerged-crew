@@ -230,6 +230,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
             <div class="card-title">Recent sales</div>
             <div id="recent-sales-list"><div class="empty">Loading...</div></div>
           </div>
+          <div class="card">
+            <div class="card-title">Recent signups</div>
+            <div id="recent-signups-list"><div class="empty">Loading...</div></div>
+          </div>
         </div>
 
         <div class="card">
@@ -265,6 +269,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
                 <tr>
                   <th>Rep</th>
                   <th>Code</th>
+                  <th>Shows joined</th>
                   <th>Rank</th>
                   <th>Lifetime pts</th>
                   <th>Status</th>
@@ -272,7 +277,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
                 </tr>
               </thead>
               <tbody id="reps-table-body">
-                <tr><td colspan="6" class="empty">Loading...</td></tr>
+                <tr><td colspan="7" class="empty">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -475,13 +480,22 @@ async function showApp() {
 }
 
 // ── DATA ──
+let repEventMap = {}; // rep_id -> [event names]
+
 async function loadAllData() {
-  const [evRes, repRes] = await Promise.all([
+  const [evRes, repRes, reRes] = await Promise.all([
     sb.from('events').select('*').order('date'),
-    sb.from('reps').select('*').order('lifetime_points', { ascending: false })
+    sb.from('reps').select('*').order('created_at', { ascending: false }),
+    sb.from('rep_events').select('rep_id, event_id, events(name)')
   ]);
   allEvents = evRes.data || [];
   allReps = repRes.data || [];
+  repEventMap = {};
+  (reRes.data || []).forEach(row => {
+    const name = row.events?.name || 'Event';
+    if (!repEventMap[row.rep_id]) repEventMap[row.rep_id] = [];
+    if (!repEventMap[row.rep_id].includes(name)) repEventMap[row.rep_id].push(name);
+  });
   populateEventSelects();
   loadOverview();
   loadRepsTable();
@@ -551,19 +565,42 @@ async function loadOverview() {
         <div style="font-size:18px;">🎫</div>
         <div style="flex:1;">
           <div style="font-weight:600;font-size:13px;">${s.reps?.name} · ${s.promo_code}</div>
-          <div style="font-size:11px;color:var(--muted);">${s.events?.name} · ${new Date(s.sold_at).toLocaleDateString()}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.events?.name} · ${s.sold_at ? new Date(s.sold_at).toLocaleDateString() : ''}</div>
         </div>
         <span class="badge b-green">+$${parseFloat(s.cash_awarded || 0).toFixed(0)}</span>
       </div>`).join('');
+
+  // Recent signups (newest reps)
+  const signupEl = document.getElementById('recent-signups-list');
+  if (signupEl) {
+    const newest = [...allReps].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6);
+    signupEl.innerHTML = newest.length === 0
+      ? '<div class="empty">No reps yet</div>'
+      : newest.map(r => {
+          const shows = (repEventMap[r.id] || []);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <div style="font-size:18px;">👤</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:13px;">${r.name} · <span class="badge b-cyan">${r.promo_code}</span></div>
+              <div style="font-size:11px;color:var(--muted);">${r.email || ''} · joined ${r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</div>
+              <div style="font-size:11px;color:var(--muted);">${shows.length ? ('Shows: ' + shows.join(', ')) : 'No shows joined yet'}</div>
+            </div>
+          </div>`;
+        }).join('');
+  }
 }
 
 // ── REPS TABLE ──
 function loadRepsTable() {
   const rankColors = { Legend: '#f0b429', Closer: '#00D4C8', Hotshot: '#a78bfa', 'Rising Star': '#22c55e', Recruit: '#7a8799' };
   document.getElementById('reps-table-body').innerHTML = allReps.length === 0
-    ? '<tr><td colspan="6" class="empty">No reps yet</td></tr>'
+    ? '<tr><td colspan="7" class="empty">No reps yet</td></tr>'
     : allReps.map(r => {
-      const initials = r.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const initials = (r.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const shows = (repEventMap[r.id] || []);
+      const showsLabel = shows.length
+        ? shows.map(s => `<div style="font-size:11px;color:var(--text);">${s}</div>`).join('')
+        : '<span style="color:var(--muted);font-size:11px;">No shows yet</span>';
       return `<tr>
         <td><div style="display:flex;align-items:center;gap:10px;">
           <div class="av" style="background:rgba(0,212,200,0.1);color:var(--cyan);">${initials}</div>
@@ -573,10 +610,11 @@ function loadRepsTable() {
           </div>
         </div></td>
         <td><span class="badge b-cyan">${r.promo_code}</span></td>
+        <td>${showsLabel}</td>
         <td><span style="color:${rankColors[r.rank] || '#7a8799'};font-family:var(--font-head);font-weight:700;">${r.rank}</span></td>
-        <td>${r.lifetime_points.toLocaleString()}</td>
+        <td>${(r.lifetime_points || 0).toLocaleString()}</td>
         <td><span class="badge ${r.status === 'active' ? 'b-green' : 'b-gray'}">${r.status || 'active'}</span></td>
-        <td style="color:var(--muted);font-size:12px;">${new Date(r.created_at).toLocaleDateString()}</td>
+        <td style="color:var(--muted);font-size:12px;">${r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
       </tr>`;
     }).join('');
 }
