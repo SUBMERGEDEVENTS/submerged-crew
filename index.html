@@ -315,6 +315,9 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <input class="field-input" id="signup-phone" type="tel" placeholder="+1 (555) 000-0000" />
         <label class="field-label">Instagram handle (optional)</label>
         <input class="field-input" id="signup-ig" type="text" placeholder="@yourhandle" />
+        <label class="field-label">Your promo code</label>
+        <input class="field-input" id="signup-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
+        <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
         <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create account</button>
         <div class="auth-error" id="signup-error"></div>
         <div class="auth-success" id="signup-success"></div>
@@ -392,6 +395,12 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
         <div class="card cyan-l">
           <div class="card-title">Your promo code</div>
+          <div id="promo-edit-wrap" style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="field-input" id="promo-edit" type="text" maxlength="16" placeholder="Change code" style="text-transform:uppercase;flex:1;min-width:120px;margin:0;" />
+            <button class="auth-btn" type="button" style="width:auto;padding:10px 14px;margin:0;" onclick="updateMyPromo()">Update</button>
+          </div>
+          <div class="auth-error" id="promo-edit-err" style="display:none;margin-top:8px;"></div>
+
           <div class="code-display">
             <div class="code-label">Share this to earn</div>
             <div class="code-val" id="my-code">—</div>
@@ -674,17 +683,29 @@ async function doSignup() {
   const err = document.getElementById('signup-error');
   const suc = document.getElementById('signup-success');
   err.style.display = 'none'; suc.style.display = 'none';
+  const rawCode = document.getElementById('signup-code').value.trim();
   if (!first || !last || !email || !pass) { err.textContent = 'Please fill in all required fields.'; err.style.display = 'block'; return; }
+  const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if (code.length < 3 || code.length > 16) {
+    err.textContent = 'Promo code must be 3–16 letters/numbers (no spaces).';
+    err.style.display = 'block';
+    return;
+  }
   btn.disabled = true; btn.textContent = 'Creating account...';
+  const { data: taken } = await sb.from('reps').select('id').eq('promo_code', code).maybeSingle();
+  if (taken) {
+    err.textContent = 'That promo code is already taken — try another.';
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Create account';
+    return;
+  }
   const { data, error } = await sb.auth.signUp({ email, password: pass });
   if (error) {
     err.textContent = error.message; err.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Request to Join';
+    btn.disabled = false; btn.textContent = 'Create account';
     return;
   }
-  // Generate promo code: first 4 letters + 2 digit number
-  const code = (first.substring(0,4) + Math.floor(10+Math.random()*89)).toUpperCase().replace(/[^A-Z0-9]/g,'');
-  await sb.from('reps').insert({
+  const { error: repErr } = await sb.from('reps').insert({
     user_id: data.user.id,
     name: first + ' ' + last,
     email,
@@ -694,9 +715,51 @@ async function doSignup() {
     rank: 'Recruit',
     lifetime_points: 0
   });
-  suc.textContent = 'Account created! Check your email to confirm, then sign in.';
-  suc.style.display = 'block';
-  btn.disabled = false; btn.textContent = 'Request to Join';
+  if (repErr) {
+    err.textContent = repErr.message.includes('promo_code') ? 'That promo code is already taken — try another.' : repErr.message;
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Create account';
+    return;
+  }
+  currentUser = data.user;
+  await loadRep();
+  showScreen('app');
+  btn.disabled = false; btn.textContent = 'Create account';
+}
+
+
+function normalizePromo(raw) {
+  return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+}
+
+async function savePromoCode(raw) {
+  const code = normalizePromo(raw);
+  if (code.length < 3 || code.length > 16) return { error: 'Promo code must be 3–16 letters/numbers.' };
+  if (!currentRep) return { error: 'Not signed in as a rep.' };
+  if (code === currentRep.promo_code) return { error: null };
+  const { data: taken } = await sb.from('reps').select('id').eq('promo_code', code).neq('id', currentRep.id).maybeSingle();
+  if (taken) return { error: 'That promo code is already taken.' };
+  const { error } = await sb.from('reps').update({ promo_code: code }).eq('id', currentRep.id);
+  if (error) return { error: error.message };
+  currentRep.promo_code = code;
+  const el = document.getElementById('my-code');
+  if (el) el.textContent = code;
+  return { error: null };
+}
+
+
+async function updateMyPromo() {
+  const err = document.getElementById('promo-edit-err');
+  const input = document.getElementById('promo-edit');
+  if (err) err.style.display = 'none';
+  const { error } = await savePromoCode(input.value);
+  if (error) {
+    if (err) { err.textContent = error; err.style.display = 'block'; }
+    return;
+  }
+  input.value = '';
+  if (err) { err.textContent = ''; err.style.display = 'none'; }
+  alert('Promo code updated. Make sure Eventbrite uses the same code.');
 }
 
 async function doLogout() {
