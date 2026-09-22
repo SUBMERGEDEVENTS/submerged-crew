@@ -318,6 +318,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <label class="field-label">Your promo code</label>
         <input class="field-input" id="signup-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
         <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
+        <label style="display:flex;gap:10px;align-items:flex-start;margin:4px 0 8px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.45;">
+          <input id="signup-tos" type="checkbox" style="margin-top:3px;accent-color:var(--cyan);flex-shrink:0;" />
+          <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--cyan);font-weight:600;">Woosah Terms of Use</a> (includes confidentiality and IP rules).</span>
+        </label>
         <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create account</button>
         <div class="auth-error" id="signup-error"></div>
         <div class="auth-success" id="signup-success"></div>
@@ -685,6 +689,11 @@ async function doSignup() {
   err.style.display = 'none'; suc.style.display = 'none';
   const rawCode = document.getElementById('signup-code').value.trim();
   if (!first || !last || !email || !pass) { err.textContent = 'Please fill in all required fields.'; err.style.display = 'block'; return; }
+  if (!document.getElementById('signup-tos').checked) {
+    err.textContent = 'Please agree to the Woosah Terms of Use to create an account.';
+    err.style.display = 'block';
+    return;
+  }
   const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (code.length < 3 || code.length > 16) {
     err.textContent = 'Promo code must be 3–16 letters/numbers (no spaces).';
