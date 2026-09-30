@@ -653,8 +653,8 @@ function loadRepsTable() {
         </div></td>
         <td><span class="badge b-cyan">${r.promo_code}</span></td>
         <td>${showsLabel}</td>
-        <td style="font-family:var(--font-head);font-weight:800;color:var(--muted);">${gamMap[r.id]?.overall_pos ?? '—'}</td>
-        <td style="font-weight:700;color:var(--cyan);">${gamMap[r.id] ? Number(gamMap[r.id].points).toLocaleString() : '—'}</td>
+        <td style="font-family:var(--font-head);font-weight:800;color:var(--muted);">${gamMap[r.id]?.excluded ? '<span class="badge b-gray" title="Hidden from rep-facing and admin leaderboards">hidden</span>' : (gamMap[r.id]?.overall_pos ?? '—')}</td>
+        <td style="font-weight:700;color:var(--cyan);" title="${gamMap[r.id] ? `Sales ${Number(gamMap[r.id].sale_points)} · Content ${Number(gamMap[r.id].content_points)} · Milestones ${Number(gamMap[r.id].milestone_points)}` : ''}">${gamMap[r.id] ? Number(gamMap[r.id].points).toLocaleString() : '—'}</td>
         <td>${gamMap[r.id] ? `<span style="color:${esc(gamMap[r.id].tier_color || '#7a8799')};font-family:var(--font-head);font-weight:700;">${esc(gamMap[r.id].tier_icon || '')} ${esc(gamMap[r.id].tier_name || '')}</span>` : '—'}</td>
         <td title="${gamMap[r.id] ? Number(gamMap[r.id].badge_count) + ' badges' : ''}">${gamMap[r.id]?.badge_icons ? esc(gamMap[r.id].badge_icons) : '<span style="color:var(--muted);font-size:11px;">—</span>'}</td>
         <td><span style="color:${rankColors[r.rank] || '#7a8799'};font-family:var(--font-head);font-weight:700;">${r.rank}</span></td>

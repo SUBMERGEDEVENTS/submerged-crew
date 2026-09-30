@@ -15,7 +15,7 @@ const events = [
 const tiers = [['Recruit',0,'🎫','#7a8799','Sell codes to level up to Rising Star'],['Rising Star',400,'🌟','#22c55e','Keep going — Hotshot unlocks $2.50/code'],['Hotshot',1000,'⚡','#a78bfa','Reach Closer for $3/code + cash bonuses'],['Closer',2500,'🔥','#00D4C8','Almost at Legend — the top of the team'],['Legend',5000,'👑','#f0b429','Top tier — $3/code + VIP guest list']].map(([name,min_points,icon,color,perk])=>({name,min_points,icon,color,perk}));
 const progress = { points:80, tickets:4, sales:2, shows_joined:3, shows_sold_at:1, max_show_tickets:4, content_points:0,
   tier: tiers[0], next_tier: { ...tiers[1], points_to_go:320 }, progress_pct:20, position:1, total_reps:11, tiers,
-  rules:{points_per_ticket:20, points_per_sale:0, include_content_points:false},
+  rules:{points_per_ticket:20, points_per_sale:0, include_content_points:true, content_flyer_points:50, content_original_points:150, milestones:[{tickets:10,points:200},{tickets:25,points:500},{tickets:50,points:1000}]}, breakdown:{sales:80,content:0,milestones:0}, hidden_from_leaderboard:false,
   badges:[
     {code:'first_sale',icon:'🎟️',name:'First Sale',description:'Sell your first ticket',threshold:1,progress:1,earned:true},
     {code:'double_digits',icon:'🔟',name:'Double Digits',description:'Sell 10 tickets',threshold:10,progress:4,earned:false},
@@ -32,7 +32,7 @@ const adminReps = [
   { id:'r3', name:'Casey Lee', email:'casey@example.com', promo_code:'CASEY', rank:'Recruit', lifetime_points:0, status:'active', created_at:'2026-09-24T00:00:00Z' }];
 const adminGam = [
   { rep_id:'r1', points:80, tickets:4, sales_count:2, shows_joined:3, shows_sold_at:1, tier_name:'Recruit', tier_icon:'🎫', tier_color:'#7a8799', badge_count:2, badge_icons:'🎟️🚐', overall_pos:1, excluded:false },
-  { rep_id:'r2', points:20, tickets:1, sales_count:1, shows_joined:2, shows_sold_at:1, tier_name:'Recruit', tier_icon:'🎫', tier_color:'#7a8799', badge_count:1, badge_icons:'🎟️', overall_pos:2, excluded:false },
+  { rep_id:'r2', excluded:true, overall_pos:null, sale_points:20, content_points:0, milestone_points:0, points:20, tickets:1, sales_count:1, shows_joined:2, shows_sold_at:1, tier_name:'Recruit', tier_icon:'🎫', tier_color:'#7a8799', badge_count:1, badge_icons:'🎟️', },
   { rep_id:'r3', points:0, tickets:0, sales_count:0, shows_joined:3, shows_sold_at:0, tier_name:'Recruit', tier_icon:'🎫', tier_color:'#7a8799', badge_count:1, badge_icons:'🚐', overall_pos:3, excluded:false }];
 
 let adminMode = false; const rpcCalls = [];
@@ -48,6 +48,7 @@ async function mock(route) {
     if (fn==='gamification_my_progress') return json(progress);
     if (fn==='gamification_leaderboard') return json(body.p_event_id ? lbShow : lbOverall);
     if (fn==='gamification_admin_reps') return json(adminGam);
+    if (fn==='promo_code_available') return json(!['TAKEN'].includes(String(body.p_code).toUpperCase()));
     return json(null);
   }
   const t = path.replace('/rest/v1/','');
@@ -79,6 +80,8 @@ async function mock(route) {
   await page.click('.nav >> text=Rewards'); await page.waitForTimeout(300);
   await page.screenshot({ path:'/workspace/shots/portal-rewards.png', fullPage:true });
   const storePts = await page.textContent('#store-pts');
+  const promo = await page.evaluate(async () => ({ taken: await isPromoAvailable('TAKEN'), free: await isPromoAvailable('FRESH1') }));
+  const pv = await page.$$eval('#point-values .pv-row', rs => rs.map(r => r.innerText.replace(/\n/g,' | ')));
   // Admin
   adminMode = true;
   await page.setViewportSize({ width:1280, height:900 });
@@ -88,6 +91,7 @@ async function mock(route) {
   await page.screenshot({ path:'/workspace/shots/admin-overview.png', fullPage:true });
   await page.click('.nav >> text=Reps'); await page.waitForTimeout(400);
   await page.screenshot({ path:'/workspace/shots/admin-reps.png', fullPage:true });
-  console.log(JSON.stringify({ errors, xssInjectedBoldTags: xss, storePts, rpcCalls }, null, 1));
+  const hiddenFlag = await page.$$eval('#reps-table-body .badge.b-gray', els => els.map(e => e.textContent));
+  console.log(JSON.stringify({ errors, xssInjectedBoldTags: xss, storePts, promo, pv, hiddenFlag, rpcCount: rpcCalls.length }, null, 1));
   await browser.close();
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

@@ -9,10 +9,17 @@ Points are **derived live from credited sales** (`public.sales`, written by the
 Eventbrite `order.placed` webhook and by admin "Log a manual sale"):
 
 ```
-points = SUM(ticket_quantity) × points_per_ticket   (default 20)
-       + COUNT(sales rows)    × points_per_sale     (default 0)
-       + approved content points, only if include_content_points (default false)
+points = sale points      SUM(ticket_quantity) × points_per_ticket (20) + orders × points_per_sale (0)
+       + content points   approved content_submissions: flyer_share 50, original_content 150
+       + milestone points per show: tickets for ONE show ≥ 10 → +200, ≥ 25 → +500, ≥ 50 → +1,000 (cumulative)
 ```
+
+Milestones are per show, matching the existing `eventbrite-webhook` logic
+(which also pays the $10 / $25 cash bonuses at 25 / 50 — cash is not derived
+here). Un-approving a post or refunding a sale below a threshold removes the
+points on the next read (verified with rolled-back self-tests:
+80 → +8 tickets 440 (240 sales + 200 milestone) → +approved original 590 →
+un-approved 440 → removed 80).
 
 - 20 pts/ticket matches what the webhook already writes to `sales.points_awarded`
   and the "+20 pts" copy reps already see, so derived points reconcile with the
@@ -64,7 +71,8 @@ Metrics available: `total_tickets`, `total_sales`, `max_show_tickets`,
 | --- | --- | --- |
 | `gamification_my_progress(p_tenant)` | signed-in rep | own points, tier, next tier, progress %, board position, badges, rules |
 | `gamification_leaderboard(p_event_id, p_limit, p_tenant)` | signed-in rep | `pos, display_name ("Alexa H."), promo_code, tier, points, tickets, is_me` — overall, or per show when `p_event_id` is set |
-| `gamification_admin_reps(p_tenant)` | admins (`is_admin()`) | per-rep points/tier/badges/position |
+| `gamification_admin_reps(p_tenant)` | admins (`is_admin()`) | per-rep points (+ sales/content/milestone breakdown), tier, badges, position, `excluded` |
+| `promo_code_available(p_code)` | anon + signed-in | `true` if the (normalised) code is free or already the caller's own |
 
 Only safe aggregate fields leave the database — no emails, phones, socials or
 other reps' ids.
@@ -86,7 +94,7 @@ tenant with its own Supabase project just needs these migrations applied.
 
 ## Leaderboard exclusions
 
-House/test accounts can be hidden without touching `reps`:
+`TEST` and `SUB45` are excluded (rep-facing board, admin leaderboard card, board position). The admin Reps table still lists them, flagged **hidden**. To add more:
 
 ```sql
 insert into private.gamification_leaderboard_exclusions (rep_id, reason)
@@ -97,4 +105,6 @@ select id, 'house account' from public.reps where promo_code in ('SUB45');
 
 - `supabase/migrations/20260930153729_gamification_phase_a.sql`
 - `supabase/migrations/20260930153836_gamification_admin_policies.sql`
+- `supabase/migrations/20260930154607_gamification_bonus_points_promo_check.sql` — exclusions, content + milestone points, `promo_code_available`
+- `supabase/migrations/20260930160000_reps_rls_own_row.sql (applied right after the merge went live)` — reps SELECT limited to own row (+ admins); `is_admin()` no longer anon-executable
 - `docs/gamification-headless-check.js` — headless smoke test (mocked Supabase)

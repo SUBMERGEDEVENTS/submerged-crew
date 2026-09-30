@@ -237,6 +237,9 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 .badge-tile .bt-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3;}
 .badge-tile .bt-prog{font-size:10px;color:var(--cyan);margin-top:4px;font-family:var(--font-head);font-weight:700;}
 .lb-select{margin-bottom:12px;}
+.pv-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.pv-row:last-child{border-bottom:none;}
+.pv-row > span:first-child{color:var(--muted);}
 .soon-pill{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,180,41,0.22);font-family:var(--font-head);font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;}
 .store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
 .store-item{background:var(--surface2);border:1px dashed var(--border2);border-radius:10px;padding:14px 10px;text-align:center;}
@@ -462,14 +465,15 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         </div>
         <div class="card">
           <div class="card-title">Point values</div>
-          <div style="display:flex;flex-direction:column;">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Ticket sold with your code</span><span class="badge b-cyan" id="pv-ticket">+20 pts + cash</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Social share / flyer</span><span class="badge b-purple">+50 pts</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Original content</span><span class="badge b-gold">+150 pts</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">10-code milestone</span><span class="badge b-cyan">+200 pts</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">25-code milestone</span><span class="badge b-gold">+500 pts + $10</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:13px;"><span style="color:var(--muted);">50-code milestone</span><span class="badge b-gold">+1,000 pts + $25</span></div>
+          <div id="point-values" style="display:flex;flex-direction:column;">
+            <div class="pv-row"><span>Ticket sold with your code</span><span class="badge b-cyan">+20 pts + cash</span></div>
+            <div class="pv-row"><span>Flyer share (approved)</span><span class="badge b-purple">+50 pts</span></div>
+            <div class="pv-row"><span>Original content (approved)</span><span class="badge b-gold">+150 pts</span></div>
+            <div class="pv-row"><span>10 tickets for one show</span><span class="badge b-cyan">+200 pts</span></div>
+            <div class="pv-row"><span>25 tickets for one show</span><span class="badge b-gold">+500 pts + $10</span></div>
+            <div class="pv-row"><span>50 tickets for one show</span><span class="badge b-gold">+1,000 pts + $25</span></div>
           </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">Milestones count tickets sold with your code for a single show. Milestone cash bonuses are added for Eventbrite orders. Content points count once a coordinator approves your post. Refunded sales and un-approved posts drop out of your total.</div>
         </div>
       </div>
 
@@ -756,8 +760,8 @@ async function doSignup() {
     return;
   }
   btn.disabled = true; btn.textContent = 'Creating account...';
-  const { data: taken } = await sb.from('reps').select('id').eq('promo_code', code).maybeSingle();
-  if (taken) {
+  const available = await isPromoAvailable(code);
+  if (available === false) {
     err.textContent = 'That promo code is already taken — try another.';
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';
@@ -792,6 +796,16 @@ async function doSignup() {
 }
 
 
+// Server-side availability check (SECURITY DEFINER RPC) — reps can't read other reps' rows.
+// Returns true/false, or null if the check itself failed (the DB unique constraint still protects us).
+async function isPromoAvailable(code) {
+  try {
+    const { data, error } = await sb.rpc('promo_code_available', { p_code: code });
+    if (error) { console.warn('promo_code_available failed', error); return null; }
+    return data === true;
+  } catch (e) { console.warn('promo_code_available error', e); return null; }
+}
+
 function normalizePromo(raw) {
   return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
 }
@@ -801,8 +815,8 @@ async function savePromoCode(raw) {
   if (code.length < 3 || code.length > 16) return { error: 'Promo code must be 3–16 letters/numbers.' };
   if (!currentRep) return { error: 'Not signed in as a rep.' };
   if (code === currentRep.promo_code) return { error: null };
-  const { data: taken } = await sb.from('reps').select('id').eq('promo_code', code).neq('id', currentRep.id).maybeSingle();
-  if (taken) return { error: 'That promo code is already taken.' };
+  const available = await isPromoAvailable(code);
+  if (available === false) return { error: 'That promo code is already taken.' };
   const { error } = await sb.from('reps').update({ promo_code: code }).eq('id', currentRep.id);
   if (error) return { error: error.message };
   currentRep.promo_code = code;
@@ -930,6 +944,29 @@ async function loadStats() {
 // GAMIFICATION — points / tier / badges (derived server-side from sales)
 // ══════════════════════════════════════════════════════
 let gamState = null;
+
+// Point values card, rendered from the live server config so copy always matches what's awarded.
+// Milestone cash ($10 / $25) is paid by the Eventbrite webhook, not configured here.
+const MILESTONE_CASH = { 25: 10, 50: 25 };
+function renderPointValues(rules) {
+  const el = document.getElementById('point-values');
+  if (!el) return;
+  const rows = [];
+  const fmt = n => Number(n).toLocaleString();
+  const ppt = Number(rules.points_per_ticket || 0), pps = Number(rules.points_per_sale || 0);
+  if (ppt > 0) rows.push(['Ticket sold with your code', `+${fmt(ppt)} pts + cash`, 'b-cyan']);
+  if (pps > 0) rows.push(['Each order with your code', `+${fmt(pps)} pts`, 'b-cyan']);
+  if (rules.include_content_points) {
+    if (Number(rules.content_flyer_points) > 0) rows.push(['Flyer share (approved)', `+${fmt(rules.content_flyer_points)} pts`, 'b-purple']);
+    if (Number(rules.content_original_points) > 0) rows.push(['Original content (approved)', `+${fmt(rules.content_original_points)} pts`, 'b-gold']);
+  }
+  (rules.milestones || []).slice().sort((a, b) => a.tickets - b.tickets).forEach(m => {
+    const cash = MILESTONE_CASH[m.tickets];
+    rows.push([`${fmt(m.tickets)} tickets for one show`, `+${fmt(m.points)} pts${cash ? ' + $' + cash : ''}`, cash ? 'b-gold' : 'b-cyan']);
+  });
+  if (!rows.length) return;
+  el.innerHTML = rows.map(([label, val, cls]) => `<div class="pv-row"><span>${esc(label)}</span><span class="badge ${cls}">${esc(val)}</span></div>`).join('');
+}
 async function loadGamification() {
   try {
     const { data, error } = await sb.rpc('gamification_my_progress', { p_tenant: TENANT_SLUG });
@@ -960,8 +997,11 @@ function renderGamification(g) {
   if (tier.color) prog.style.background = tier.color;
 
   const meta = document.getElementById('gam-meta');
-  const posTxt = (g.position && pts > 0) ? `#${g.position} of ${g.total_reps} on the crew board` : 'Make a sale to get on the board';
-  meta.innerHTML = `<span>${esc(posTxt)}</span><span><b>${Number(g.tickets||0)}</b> tickets · <b>${Number(g.shows_joined||0)}</b> shows</span>`;
+  const posTxt = g.hidden_from_leaderboard ? 'Hidden from the leaderboard'
+    : (g.position && pts > 0) ? `#${g.position} of ${g.total_reps} on the crew board` : 'Make a sale to get on the board';
+  const bd = g.breakdown || {};
+  meta.innerHTML = `<span>${esc(posTxt)}</span><span><b>${Number(g.tickets||0)}</b> tickets · <b>${Number(g.shows_joined||0)}</b> shows</span>`
+    + `<span style="flex-basis:100%;">Sales <b>${Number(bd.sales||0).toLocaleString()}</b> · Content <b>${Number(bd.content||0).toLocaleString()}</b> · Milestones <b>${Number(bd.milestones||0).toLocaleString()}</b></span>`;
   meta.style.display = 'flex';
 
   const badges = g.badges || [];
@@ -977,11 +1017,7 @@ function renderGamification(g) {
       </div>`).join('')}
     </div>` : '';
 
-  const ppt = g.rules?.points_per_ticket;
-  if (ppt != null) {
-    const pv = document.getElementById('pv-ticket');
-    if (pv) pv.textContent = `+${ppt} pts + cash`;
-  }
+  if (g.rules) renderPointValues(g.rules);
   const storePts = document.getElementById('store-pts');
   if (storePts) storePts.textContent = pts.toLocaleString();
 }
