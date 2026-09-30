@@ -78,3 +78,6 @@ See [docs/TRIAL_ONBOARDING.md](docs/TRIAL_ONBOARDING.md) for the 2–3 client tr
 
 Static deploys respect [.assetsignore](.assetsignore) so `.git` and other junk are not uploaded as assets.
 
+
+## Gamification
+Points, tiers, badges, leaderboards and the Rewards store placeholder: see [docs/GAMIFICATION.md](docs/GAMIFICATION.md).
