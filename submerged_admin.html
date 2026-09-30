@@ -236,7 +236,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           </div>
           <div class="card">
             <div class="card-title">Points leaderboard · all shows</div>
-            <div id="points-lb-list"><div class="empty">Loading...</div></div>
+            <div id="points-lb-list" style="max-height:440px;overflow-y:auto;"><div class="empty">Loading...</div></div>
           </div>
         </div>
 
@@ -458,7 +458,7 @@ window.addEventListener('load', () => {
   setTimeout(async () => {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     const { data: { session } } = await sb.auth.getSession();
-    if (session) { currentAdmin = session.user; showApp(); }
+    if (session) { if (await requireAdmin(session.user)) { currentAdmin = session.user; showApp(); } }
     else showScreen('login');
   }, 200);
 });
@@ -471,8 +471,24 @@ async function adminLogin() {
   err.style.display = 'none';
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  if (!(await requireAdmin(data.user))) return;
   currentAdmin = data.user;
   showApp();
+}
+
+// Only admins may use this page. Crew portal and admin share one Supabase
+// session (same origin), so a signed-in rep would otherwise land here.
+async function requireAdmin(user) {
+  const { data: ok, error } = await sb.rpc('is_admin');
+  if (!error && ok === true) return true;
+  await sb.auth.signOut();
+  showScreen('login');
+  const err = document.getElementById('login-err');
+  err.textContent = error
+    ? `Couldn't verify admin access (${error.message}). Please sign in again.`
+    : `This account isn't an admin. Sign in with an admin account. (Rejected: ${user?.email || 'unknown'})`;
+  err.style.display = 'block';
+  return false;
 }
 
 async function adminLogout() {
@@ -616,8 +632,7 @@ function renderPointsLeaderboard() {
   allReps.forEach(r => { repById[r.id] = r; });
   const rows = Object.values(gamMap)
     .filter(g => g.overall_pos != null)
-    .sort((a, b) => a.overall_pos - b.overall_pos || b.points - a.points)
-    .slice(0, 8);
+    .sort((a, b) => a.overall_pos - b.overall_pos || b.points - a.points);
   if (!rows.length) { el.innerHTML = '<div class="empty">No points data yet</div>'; return; }
   el.innerHTML = rows.map(g => {
     const r = repById[g.rep_id] || {};

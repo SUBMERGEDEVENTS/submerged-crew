@@ -106,5 +106,5 @@ select id, 'house account' from public.reps where promo_code in ('SUB45');
 - `supabase/migrations/20260930153729_gamification_phase_a.sql`
 - `supabase/migrations/20260930153836_gamification_admin_policies.sql`
 - `supabase/migrations/20260930154607_gamification_bonus_points_promo_check.sql` — exclusions, content + milestone points, `promo_code_available`
-- `supabase/migrations/20260930160000_reps_rls_own_row.sql (applied right after the merge went live)` — reps SELECT limited to own row (+ admins); `is_admin()` no longer anon-executable
+- `supabase/migrations/20260930161632_reps_rls_own_row.sql (applied right after the merge went live)` — reps SELECT limited to own row (+ admins); `is_admin()` no longer anon-executable
 - `docs/gamification-headless-check.js` — headless smoke test (mocked Supabase)
