@@ -15,3 +15,7 @@ node_modules/**
 !README.md
 docs
 docs/**
+
+# Supabase SQL (migrations) — repo-only, not a static asset
+supabase
+supabase/**

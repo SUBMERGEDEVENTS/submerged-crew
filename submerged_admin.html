@@ -234,6 +234,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
             <div class="card-title">Recent signups</div>
             <div id="recent-signups-list"><div class="empty">Loading...</div></div>
           </div>
+          <div class="card">
+            <div class="card-title">Points leaderboard · all shows</div>
+            <div id="points-lb-list"><div class="empty">Loading...</div></div>
+          </div>
         </div>
 
         <div class="card">
@@ -270,6 +274,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
                   <th>Rep</th>
                   <th>Code</th>
                   <th>Shows joined</th>
+                  <th>#</th>
+                  <th>Points</th>
+                  <th>Tier</th>
+                  <th>Badges</th>
                   <th>Rank</th>
                   <th>Lifetime pts</th>
                   <th>Status</th>
@@ -277,7 +285,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
                 </tr>
               </thead>
               <tbody id="reps-table-body">
-                <tr><td colspan="7" class="empty">Loading...</td></tr>
+                <tr><td colspan="11" class="empty">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -440,6 +448,11 @@ const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
 
 let sb, currentAdmin, allEvents = [], allReps = [];
+let gamMap = {}; // rep_id -> derived gamification stats (points/tier/badges)
+const TENANT_SLUG = (function(){ try { return new URLSearchParams(location.search).get('tenant') || 'submerged'; } catch(_) { return 'submerged'; } })();
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 window.addEventListener('load', () => {
   setTimeout(async () => {
@@ -483,13 +496,17 @@ async function showApp() {
 let repEventMap = {}; // rep_id -> [event names]
 
 async function loadAllData() {
-  const [evRes, repRes, reRes] = await Promise.all([
+  const [evRes, repRes, reRes, gamRes] = await Promise.all([
     sb.from('events').select('*').order('date'),
     sb.from('reps').select('*').order('created_at', { ascending: false }),
-    sb.from('rep_events').select('rep_id, event_id, events(name)')
+    sb.from('rep_events').select('rep_id, event_id, events(name)'),
+    sb.rpc('gamification_admin_reps', { p_tenant: TENANT_SLUG })
   ]);
   allEvents = evRes.data || [];
   allReps = repRes.data || [];
+  gamMap = {};
+  if (gamRes.error) console.warn('gamification_admin_reps unavailable', gamRes.error);
+  (gamRes.data || []).forEach(g => { gamMap[g.rep_id] = g; });
   repEventMap = {};
   (reRes.data || []).forEach(row => {
     const name = row.events?.name || 'Event';
@@ -498,6 +515,7 @@ async function loadAllData() {
   });
   populateEventSelects();
   loadOverview();
+  renderPointsLeaderboard();
   loadRepsTable();
   loadContent();
   loadPayouts();
@@ -590,11 +608,35 @@ async function loadOverview() {
   }
 }
 
+// ── POINTS LEADERBOARD (derived from sales via gamification_admin_reps) ──
+function renderPointsLeaderboard() {
+  const el = document.getElementById('points-lb-list');
+  if (!el) return;
+  const repById = {};
+  allReps.forEach(r => { repById[r.id] = r; });
+  const rows = Object.values(gamMap)
+    .filter(g => g.overall_pos != null)
+    .sort((a, b) => a.overall_pos - b.overall_pos || b.points - a.points)
+    .slice(0, 8);
+  if (!rows.length) { el.innerHTML = '<div class="empty">No points data yet</div>'; return; }
+  el.innerHTML = rows.map(g => {
+    const r = repById[g.rep_id] || {};
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--font-head);font-size:18px;font-weight:900;min-width:24px;color:var(--muted);">${Number(g.overall_pos)}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${esc(r.name || 'Unknown')} · <span class="badge b-cyan">${esc(r.promo_code || '')}</span></div>
+        <div style="font-size:11px;color:var(--muted);">${esc(g.tier_icon || '')} ${esc(g.tier_name || '')} · ${Number(g.tickets)} tickets · ${Number(g.shows_joined)} shows ${g.badge_icons ? '· ' + esc(g.badge_icons) : ''}</div>
+      </div>
+      <span class="badge b-cyan">${Number(g.points).toLocaleString()} pts</span>
+    </div>`;
+  }).join('');
+}
+
 // ── REPS TABLE ──
 function loadRepsTable() {
   const rankColors = { Legend: '#f0b429', Closer: '#00D4C8', Hotshot: '#a78bfa', 'Rising Star': '#22c55e', Recruit: '#7a8799' };
   document.getElementById('reps-table-body').innerHTML = allReps.length === 0
-    ? '<tr><td colspan="7" class="empty">No reps yet</td></tr>'
+    ? '<tr><td colspan="11" class="empty">No reps yet</td></tr>'
     : allReps.map(r => {
       const initials = (r.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
       const shows = (repEventMap[r.id] || []);
@@ -611,6 +653,10 @@ function loadRepsTable() {
         </div></td>
         <td><span class="badge b-cyan">${r.promo_code}</span></td>
         <td>${showsLabel}</td>
+        <td style="font-family:var(--font-head);font-weight:800;color:var(--muted);">${gamMap[r.id]?.excluded ? '<span class="badge b-gray" title="Hidden from rep-facing and admin leaderboards">hidden</span>' : (gamMap[r.id]?.overall_pos ?? '—')}</td>
+        <td style="font-weight:700;color:var(--cyan);" title="${gamMap[r.id] ? `Sales ${Number(gamMap[r.id].sale_points)} · Content ${Number(gamMap[r.id].content_points)} · Milestones ${Number(gamMap[r.id].milestone_points)}` : ''}">${gamMap[r.id] ? Number(gamMap[r.id].points).toLocaleString() : '—'}</td>
+        <td>${gamMap[r.id] ? `<span style="color:${esc(gamMap[r.id].tier_color || '#7a8799')};font-family:var(--font-head);font-weight:700;">${esc(gamMap[r.id].tier_icon || '')} ${esc(gamMap[r.id].tier_name || '')}</span>` : '—'}</td>
+        <td title="${gamMap[r.id] ? Number(gamMap[r.id].badge_count) + ' badges' : ''}">${gamMap[r.id]?.badge_icons ? esc(gamMap[r.id].badge_icons) : '<span style="color:var(--muted);font-size:11px;">—</span>'}</td>
         <td><span style="color:${rankColors[r.rank] || '#7a8799'};font-family:var(--font-head);font-weight:700;">${r.rank}</span></td>
         <td>${(r.lifetime_points || 0).toLocaleString()}</td>
         <td><span class="badge ${r.status === 'active' ? 'b-green' : 'b-gray'}">${r.status || 'active'}</span></td>

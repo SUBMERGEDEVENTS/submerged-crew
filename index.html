@@ -224,6 +224,28 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   .site-header{padding:0 1rem;}
   .field-row{grid-template-columns:1fr;}
 }
+
+/* ── Gamification (Phase A) ── */
+.gam-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);margin-top:6px;gap:8px;flex-wrap:wrap;}
+.gam-meta b{color:var(--text);font-family:var(--font-head);}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:4px;}
+.badge-tile{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 8px;text-align:center;position:relative;}
+.badge-tile.locked{opacity:0.45;filter:grayscale(1);}
+.badge-tile.earned{border-color:var(--cyan-border);background:var(--cyan-dim);}
+.badge-tile .bt-icon{font-size:24px;line-height:1.2;}
+.badge-tile .bt-name{font-family:var(--font-head);font-size:12px;font-weight:800;margin-top:4px;letter-spacing:0.02em;}
+.badge-tile .bt-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3;}
+.badge-tile .bt-prog{font-size:10px;color:var(--cyan);margin-top:4px;font-family:var(--font-head);font-weight:700;}
+.lb-select{margin-bottom:12px;}
+.pv-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.pv-row:last-child{border-bottom:none;}
+.pv-row > span:first-child{color:var(--muted);}
+.soon-pill{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,180,41,0.22);font-family:var(--font-head);font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;}
+.store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.store-item{background:var(--surface2);border:1px dashed var(--border2);border-radius:10px;padding:14px 10px;text-align:center;}
+.store-item .si-icon{font-size:28px;}
+.store-item .si-name{font-family:var(--font-head);font-size:13px;font-weight:800;margin-top:6px;}
+.store-item .si-lock{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.08em;font-family:var(--font-head);font-weight:700;}
 </style>
 </head>
 <body>
@@ -353,6 +375,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <button class="nav-btn" onclick="showView('leaderboard')">Rankings</button>
         <button class="nav-btn" onclick="showView('submit')">Submit</button>
         <button class="nav-btn" onclick="showView('music')">Mix</button>
+        <button class="nav-btn" onclick="showView('rewards')">Rewards</button>
       </div>
 
       <!-- ── MY STATS ── -->
@@ -394,6 +417,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
               <div style="font-size:10px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">pts</div>
             </div>
           </div>
+          <div class="gam-meta" id="gam-meta" style="display:none;"></div>
           <div id="badge-row"></div>
         </div>
 
@@ -431,19 +455,25 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
       <div id="view-leaderboard" class="view">
         <div class="card">
           <div class="card-title" id="lb-event-title">Leaderboard</div>
-          <div class="section-sub">Top reps by points this event</div>
+          <div class="tab-row" id="lb-scope-tabs">
+            <button class="tab-btn active" data-scope="overall" onclick="setLbScope('overall')">Overall</button>
+            <button class="tab-btn" data-scope="show" onclick="setLbScope('show')">By show</button>
+          </div>
+          <select class="field-input lb-select" id="lb-event-select" style="display:none;" onchange="loadLeaderboard()"></select>
+          <div class="section-sub" id="lb-sub">Top reps by points across all shows</div>
           <div id="lb-list"><div class="empty"><div class="empty-icon">🏆</div>Loading rankings...</div></div>
         </div>
         <div class="card">
           <div class="card-title">Point values</div>
-          <div style="display:flex;flex-direction:column;">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Code sold</span><span class="badge b-cyan">+20 pts + cash</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Social share / flyer</span><span class="badge b-purple">+50 pts</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">Original content</span><span class="badge b-gold">+150 pts</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">10-code milestone</span><span class="badge b-cyan">+200 pts</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted);">25-code milestone</span><span class="badge b-gold">+500 pts + $10</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:13px;"><span style="color:var(--muted);">50-code milestone</span><span class="badge b-gold">+1,000 pts + $25</span></div>
+          <div id="point-values" style="display:flex;flex-direction:column;">
+            <div class="pv-row"><span>Ticket sold with your code</span><span class="badge b-cyan">+20 pts + cash</span></div>
+            <div class="pv-row"><span>Flyer share (approved)</span><span class="badge b-purple">+50 pts</span></div>
+            <div class="pv-row"><span>Original content (approved)</span><span class="badge b-gold">+150 pts</span></div>
+            <div class="pv-row"><span>10 tickets for one show</span><span class="badge b-cyan">+200 pts</span></div>
+            <div class="pv-row"><span>25 tickets for one show</span><span class="badge b-gold">+500 pts + $10</span></div>
+            <div class="pv-row"><span>50 tickets for one show</span><span class="badge b-gold">+1,000 pts + $25</span></div>
           </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">Milestones count tickets sold with your code for a single show. Milestone cash bonuses are added for Eventbrite orders. Content points count once a coordinator approves your post. Refunded sales and un-approved posts drop out of your total.</div>
         </div>
       </div>
 
@@ -538,6 +568,30 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         </div>
       </div>
 
+
+      <!-- ── REWARDS STORE (Phase B placeholder) ── -->
+      <div id="view-rewards" class="view">
+        <div class="card cyan-l" style="text-align:center;padding:2rem 1.5rem;">
+          <div style="font-size:44px;margin-bottom:6px;">🎁</div>
+          <div class="soon-pill">Coming soon</div>
+          <div style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:8px;">Rewards store</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:420px;margin:0 auto;">Soon you'll be able to spend your points on crew rewards. Keep stacking now — every ticket sold with your code adds to your balance.</div>
+          <div style="margin-top:1.25rem;display:inline-flex;align-items:baseline;gap:8px;padding:10px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;">
+            <span style="font-size:11px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Your points</span>
+            <span style="font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--cyan);" id="store-pts">—</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">A sneak peek</div>
+          <div class="store-grid">
+            <div class="store-item"><div class="si-icon">👕</div><div class="si-name">Crew merch</div><div class="si-lock">🔒 Coming soon</div></div>
+            <div class="store-item"><div class="si-icon">🎟️</div><div class="si-name">Guest list +1</div><div class="si-lock">🔒 Coming soon</div></div>
+            <div class="store-item"><div class="si-icon">🥂</div><div class="si-name">VIP upgrade</div><div class="si-lock">🔒 Coming soon</div></div>
+            <div class="store-item"><div class="si-icon">🎧</div><div class="si-name">Backstage moments</div><div class="si-lock">🔒 Coming soon</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:12px;">Rewards and point prices are not final. Your current points will carry over when the store opens.</div>
+        </div>
+      </div>
     </div>
     <div class="wave-bot" style="margin-top:2rem;"></div>
   </div>
@@ -551,6 +605,11 @@ const SUPABASE_URL = 'https://khisgmozkufnzapmldgc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c';
 
 let sb;
+// Tenant slug for gamification RPCs (config falls back to 'default' server-side)
+const TENANT_SLUG = (function(){ try { return new URLSearchParams(location.search).get('tenant') || 'submerged'; } catch(_) { return 'submerged'; } })();
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function initSupabase() {
   if (typeof supabase === 'undefined') {
     console.error('Supabase library not loaded yet');
@@ -701,8 +760,8 @@ async function doSignup() {
     return;
   }
   btn.disabled = true; btn.textContent = 'Creating account...';
-  const { data: taken } = await sb.from('reps').select('id').eq('promo_code', code).maybeSingle();
-  if (taken) {
+  const available = await isPromoAvailable(code);
+  if (available === false) {
     err.textContent = 'That promo code is already taken — try another.';
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';
@@ -737,6 +796,16 @@ async function doSignup() {
 }
 
 
+// Server-side availability check (SECURITY DEFINER RPC) — reps can't read other reps' rows.
+// Returns true/false, or null if the check itself failed (the DB unique constraint still protects us).
+async function isPromoAvailable(code) {
+  try {
+    const { data, error } = await sb.rpc('promo_code_available', { p_code: code });
+    if (error) { console.warn('promo_code_available failed', error); return null; }
+    return data === true;
+  } catch (e) { console.warn('promo_code_available error', e); return null; }
+}
+
 function normalizePromo(raw) {
   return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
 }
@@ -746,8 +815,8 @@ async function savePromoCode(raw) {
   if (code.length < 3 || code.length > 16) return { error: 'Promo code must be 3–16 letters/numbers.' };
   if (!currentRep) return { error: 'Not signed in as a rep.' };
   if (code === currentRep.promo_code) return { error: null };
-  const { data: taken } = await sb.from('reps').select('id').eq('promo_code', code).neq('id', currentRep.id).maybeSingle();
-  if (taken) return { error: 'That promo code is already taken.' };
+  const available = await isPromoAvailable(code);
+  if (available === false) return { error: 'That promo code is already taken.' };
   const { error } = await sb.from('reps').update({ promo_code: code }).eq('id', currentRep.id);
   if (error) return { error: error.message };
   currentRep.promo_code = code;
@@ -868,6 +937,89 @@ async function loadStats() {
 
   renderRankCard();
   renderActivityFeed();
+  loadGamification();
+}
+
+// ══════════════════════════════════════════════════════
+// GAMIFICATION — points / tier / badges (derived server-side from sales)
+// ══════════════════════════════════════════════════════
+let gamState = null;
+
+// Point values card, rendered from the live server config so copy always matches what's awarded.
+// Milestone cash ($10 / $25) is paid by the Eventbrite webhook, not configured here.
+const MILESTONE_CASH = { 25: 10, 50: 25 };
+function renderPointValues(rules) {
+  const el = document.getElementById('point-values');
+  if (!el) return;
+  const rows = [];
+  const fmt = n => Number(n).toLocaleString();
+  const ppt = Number(rules.points_per_ticket || 0), pps = Number(rules.points_per_sale || 0);
+  if (ppt > 0) rows.push(['Ticket sold with your code', `+${fmt(ppt)} pts + cash`, 'b-cyan']);
+  if (pps > 0) rows.push(['Each order with your code', `+${fmt(pps)} pts`, 'b-cyan']);
+  if (rules.include_content_points) {
+    if (Number(rules.content_flyer_points) > 0) rows.push(['Flyer share (approved)', `+${fmt(rules.content_flyer_points)} pts`, 'b-purple']);
+    if (Number(rules.content_original_points) > 0) rows.push(['Original content (approved)', `+${fmt(rules.content_original_points)} pts`, 'b-gold']);
+  }
+  (rules.milestones || []).slice().sort((a, b) => a.tickets - b.tickets).forEach(m => {
+    const cash = MILESTONE_CASH[m.tickets];
+    rows.push([`${fmt(m.tickets)} tickets for one show`, `+${fmt(m.points)} pts${cash ? ' + $' + cash : ''}`, cash ? 'b-gold' : 'b-cyan']);
+  });
+  if (!rows.length) return;
+  el.innerHTML = rows.map(([label, val, cls]) => `<div class="pv-row"><span>${esc(label)}</span><span class="badge ${cls}">${esc(val)}</span></div>`).join('');
+}
+async function loadGamification() {
+  try {
+    const { data, error } = await sb.rpc('gamification_my_progress', { p_tenant: TENANT_SLUG });
+    if (error) throw error;
+    if (!data) return;
+    gamState = data;
+    renderGamification(data);
+  } catch (e) {
+    console.warn('gamification unavailable, using legacy rank card', e);
+  }
+}
+
+function renderGamification(g) {
+  const tier = g.tier || {};
+  const next = g.next_tier;
+  const pts = Number(g.points || 0);
+  document.getElementById('m-pts').textContent = pts.toLocaleString();
+  document.getElementById('rank-icon').textContent = tier.icon || '🎫';
+  const nameEl = document.getElementById('rank-name');
+  nameEl.textContent = tier.name || 'Recruit';
+  if (tier.color) nameEl.style.color = tier.color;
+  document.getElementById('rank-sub').textContent = next
+    ? `${Number(next.points_to_go).toLocaleString()} pts to ${next.name}${tier.perk ? ' · ' + tier.perk : ''}`
+    : (tier.perk || 'Top tier reached');
+  document.getElementById('rank-pts-val').textContent = pts.toLocaleString();
+  const prog = document.getElementById('rank-prog');
+  prog.style.width = (g.progress_pct ?? 0) + '%';
+  if (tier.color) prog.style.background = tier.color;
+
+  const meta = document.getElementById('gam-meta');
+  const posTxt = g.hidden_from_leaderboard ? 'Hidden from the leaderboard'
+    : (g.position && pts > 0) ? `#${g.position} of ${g.total_reps} on the crew board` : 'Make a sale to get on the board';
+  const bd = g.breakdown || {};
+  meta.innerHTML = `<span>${esc(posTxt)}</span><span><b>${Number(g.tickets||0)}</b> tickets · <b>${Number(g.shows_joined||0)}</b> shows</span>`
+    + `<span style="flex-basis:100%;">Sales <b>${Number(bd.sales||0).toLocaleString()}</b> · Content <b>${Number(bd.content||0).toLocaleString()}</b> · Milestones <b>${Number(bd.milestones||0).toLocaleString()}</b></span>`;
+  meta.style.display = 'flex';
+
+  const badges = g.badges || [];
+  const earned = badges.filter(b => b.earned).length;
+  document.getElementById('badge-row').innerHTML = badges.length ? `
+    <div class="card-title" style="margin-top:1rem;">Badges · ${earned}/${badges.length}</div>
+    <div class="badge-grid">${badges.map(b => `
+      <div class="badge-tile ${b.earned ? 'earned' : 'locked'}" title="${esc(b.description)}">
+        <div class="bt-icon">${esc(b.icon || '🏅')}</div>
+        <div class="bt-name">${esc(b.name)}</div>
+        <div class="bt-desc">${esc(b.description)}</div>
+        ${b.earned ? '<div class="bt-prog">✓ Earned</div>' : `<div class="bt-prog">${Number(b.progress)}/${Number(b.threshold)}</div>`}
+      </div>`).join('')}
+    </div>` : '';
+
+  if (g.rules) renderPointValues(g.rules);
+  const storePts = document.getElementById('store-pts');
+  if (storePts) storePts.textContent = pts.toLocaleString();
 }
 
 function renderRankCard() {
@@ -978,7 +1130,57 @@ async function joinEvent(eventId, btn) {
   }
 }
 
-async function renderLeaderboard(events) {
+let lbScope = 'overall';
+function setLbScope(scope) {
+  lbScope = scope;
+  document.querySelectorAll('#lb-scope-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.scope === scope));
+  document.getElementById('lb-event-select').style.display = scope === 'show' ? 'block' : 'none';
+  loadLeaderboard();
+}
+
+function renderLeaderboard(events) {
+  const sel = document.getElementById('lb-event-select');
+  const evs = events || [];
+  const active = evs.find(e => e.status === 'active');
+  sel.innerHTML = evs.map(e => `<option value="${esc(e.id)}"${active && active.id === e.id ? ' selected' : ''}>${esc(e.name)}</option>`).join('');
+  loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const list = document.getElementById('lb-list');
+  const sel = document.getElementById('lb-event-select');
+  const eventId = lbScope === 'show' ? (sel.value || null) : null;
+  if (lbScope === 'show' && !eventId) { list.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No shows yet</div>'; return; }
+  const evName = eventId ? (allEvents.find(e => e.id === eventId)?.name || 'Show') : null;
+  document.getElementById('lb-event-title').textContent = eventId ? `${evName} · Show rankings` : 'Crew leaderboard · All shows';
+  document.getElementById('lb-sub').textContent = eventId ? 'Points from tickets sold for this show' : 'Top reps by points across all shows';
+  const { data, error } = await sb.rpc('gamification_leaderboard', { p_event_id: eventId, p_limit: 25, p_tenant: TENANT_SLUG });
+  if (error) { console.warn('leaderboard RPC failed, falling back', error); return renderLeaderboardLegacy(allEvents); }
+  if (!data || data.length === 0) { list.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps on this board yet — be the first!</div>'; return; }
+  const rankNums = { 1: 'r1', 2: 'r2', 3: 'r3' };
+  const maxPts = Math.max(1, ...data.map(r => r.points || 0));
+  list.innerHTML = data.map(r => {
+    const initials = (r.display_name || '?').split(' ').map(n => n[0] || '').join('').substring(0, 2).toUpperCase();
+    const pct = Math.round(((r.points || 0) / maxPts) * 100);
+    const col = r.tier_color || '#7a8799';
+    return `<div class="lb-row ${r.is_me ? 'me' : ''}">
+      <div class="lb-rank ${(r.points > 0 && rankNums[r.pos]) || ''}">${Number(r.pos)}</div>
+      <div class="av" style="background:${esc(col)}22;color:${esc(col)};">${esc(initials)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${esc(r.display_name)}${r.is_me ? ' <span class="you-tag">· YOU</span>' : ''}</div>
+        <div class="lb-sub">${esc(r.tier_icon || '')} ${esc(r.tier_name || '')} · ${esc(r.promo_code)} · ${Number(r.tickets || 0)} tickets</div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;${r.pos === 1 && r.points > 0 ? 'background:var(--gold);' : ''}"></div></div>
+      </div>
+      <div class="lb-right">
+        <div class="lb-pts">${Number(r.points || 0).toLocaleString()}</div>
+        <div class="lb-codes">${eventId ? 'pts this show' : 'pts'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Legacy per-event board (fallback if gamification RPC is unavailable)
+async function renderLeaderboardLegacy(events) {
   const activeEvent = events?.find(e=>e.status==='active');
   if (!activeEvent) { document.getElementById('lb-list').innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No active event</div>'; return; }
   document.getElementById('lb-event-title').textContent = activeEvent.name + ' · Live rankings';
@@ -1123,7 +1325,7 @@ function showView(id) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
-  const idx = ['home','events','leaderboard','submit','music'].indexOf(id);
+  const idx = ['home','events','leaderboard','submit','music','rewards'].indexOf(id);
   document.querySelectorAll('.nav-btn')[idx].classList.add('active');
 }
 
