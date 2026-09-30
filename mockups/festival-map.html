@@ -81,23 +81,61 @@ button{font:inherit;color:inherit;}
 .zsel.on{opacity:1;}
 .zsel.locked{stroke:#ffb020;fill:rgba(255,176,32,.05);}
 @keyframes march{to{stroke-dashoffset:-24}}
-.fogshape{transition:opacity 1.3s ease;}
-.zart.locked{filter:url(#desat);}
-#art-disco .secret{transition:opacity 1.2s ease .3s;}
-#art-disco.locked .secret{opacity:0;}
+#art-disco .secret{transition:opacity 1.2s ease .5s;}
+#art-disco.locked .secret{opacity:0;transition:opacity .3s;}
+#art-disco .mystery{transition:opacity .6s;}
+#art-disco:not(.locked) .mystery{opacity:0;}
+.note{animation:note 3.2s ease-in-out infinite;fill:#f3e8ff;font-size:16px;paint-order:stroke;stroke:#4c1d95;stroke-width:2.5px;font-family:"Noto Sans Symbols 2","Segoe UI Symbol",sans-serif !important;}
+.note.n2{animation-delay:-1.1s}.note.n3{animation-delay:-2.2s}
+@keyframes note{0%{transform:translate(0,6px);opacity:0}25%{opacity:.9}100%{transform:translate(6px,-22px);opacity:0}}
+.zsel.locked{stroke:var(--cyan);}
+/* labels */
 .zlabel{pointer-events:none;}
-.zlabel .lbl-open,.zlabel .lbl-lock{transition:opacity .45s ease,transform .45s cubic-bezier(.3,1.6,.5,1);transform-box:fill-box;transform-origin:center;}
-.zlabel.is-locked .lbl-open{opacity:0;transform:scale(.6);}
-.zlabel:not(.is-locked) .lbl-lock{opacity:0;transform:scale(1.5) rotate(-12deg);}
+.zlabel .lbl-open,.zlabel .lbl-lock{transition:opacity .45s ease .35s,transform .45s cubic-bezier(.3,1.6,.5,1) .35s;transform-box:fill-box;transform-origin:center;}
+.zlabel.is-locked .lbl-open{opacity:0;transform:scale(.7);}
+.zlabel:not(.is-locked) .lbl-lock{opacity:0;transform:scale(1.25);}
 .pill{fill:rgba(8,14,14,.86);stroke:rgba(255,255,255,.25);stroke-width:1;}
 .zlabel.current .pill{stroke:var(--cyan);stroke-width:1.5;}
 .pill-t{fill:#fff;font-size:10.5px;letter-spacing:.06em;}
-.pill-lock{fill:rgba(8,14,14,.9);stroke:rgba(255,176,32,.6);stroke-width:1;}
-.pill-t2{fill:#ffe2b8;font-size:10px;letter-spacing:.06em;}
-.pill-sub{fill:#ffb020;font-size:8px;letter-spacing:.1em;}
-.lock-ring{fill:#0b1210;stroke:#ffb020;stroke-width:2;}
-.lock-bob{animation:lockbob 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
-@keyframes lockbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.pill-lock{fill:rgba(20,12,2,.88);stroke:#ffb020;stroke-width:1.2;}
+.pill-t2{fill:#ffe2b8;font-size:10.5px;letter-spacing:.06em;}
+.zlabel.sec .pill-lock{stroke:#a78bfa;fill:rgba(16,8,32,.88);}
+.zlabel.sec .pill-t2{fill:#e9d5ff;}
+/* ===== geo-fences ===== */
+.geo .hatch{transition:opacity .25s;}
+.geo .rope-grp{transition:opacity .25s;}
+.rope-glow{fill:none;stroke:#ffb020;stroke-width:9;stroke-opacity:.13;stroke-linejoin:round;}
+.rope-glow2{fill:none;stroke:#ffb020;stroke-width:4.6;stroke-opacity:.28;stroke-linejoin:round;}
+.rope-base{fill:none;stroke:#1a1206;stroke-width:3;stroke-linejoin:round;}
+.rope{fill:none;stroke:#ffb020;stroke-width:1.9;stroke-dasharray:7 5;stroke-linejoin:round;animation:ropemarch 2.4s linear infinite;}
+@keyframes ropemarch{to{stroke-dashoffset:-24}}
+.geo.secret .rope-glow,.geo.secret .rope-glow2{stroke:#a78bfa;}
+.geo.secret .rope{stroke:#c4b5fd;stroke-dasharray:2 5;stroke-linecap:round;stroke-width:2.2;}
+.post{transform-box:fill-box;transform-origin:50% 100%;transition:transform .25s,opacity .25s;}
+.post .pc{fill:#2a1d0e;stroke:#ffb020;stroke-width:1.1;}
+.geo.secret .post .pc{fill:#1e1036;stroke:#a78bfa;}
+.gate{transition:opacity .2s;}
+.door{transform-box:fill-box;transition:transform .3s ease;}
+.door-l{transform-origin:0% 50%;}
+.door-r{transform-origin:100% 50%;}
+.gate-lock{transform-box:fill-box;transform-origin:center;transition:transform .3s,opacity .3s;}
+.gate-lock .gl-bob{animation:lockbob 2.6s ease-in-out infinite;}
+@keyframes lockbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
+.gate-tag{transition:opacity .25s;}
+.tag-bg{fill:rgba(20,12,2,.92);stroke:#ffb020;stroke-width:1;}
+.tag-t{fill:#ffcf70;font-size:8px;letter-spacing:.08em;}
+.geo.secret .tag-bg{fill:rgba(16,8,32,.92);stroke:#a78bfa;}
+.geo.secret .tag-t{fill:#d8b4fe;}
+/* unlocked = fence drops, gate swings open, then fades */
+.geo.open .gate-lock{opacity:0;transform:translateY(-10px) scale(1.7);transition:transform .45s cubic-bezier(.3,1.4,.5,1),opacity .45s ease;}
+.geo.open .gate-tag{opacity:0;transition:opacity .3s ease;}
+.geo.open .door-l{transform:rotate(-108deg);transition:transform .75s cubic-bezier(.3,1.45,.5,1) .25s;}
+.geo.open .door-r{transform:rotate(108deg);transition:transform .75s cubic-bezier(.3,1.45,.5,1) .25s;}
+.geo.open .post{transform:scale(1,0);opacity:0;transition:transform .35s cubic-bezier(.55,-.7,.7,1) var(--d,0s),opacity .3s ease calc(var(--d,0s) + .1s);}
+.geo.open .rope-grp{opacity:0;transition:opacity .8s ease .55s;}
+.geo.open .hatch{opacity:0;transition:opacity .9s ease .45s;}
+.geo.open .gate{opacity:0;transition:opacity .6s ease 1.6s;}
+body.boot *{transition:none!important;}
 .beam{mix-blend-mode:screen;animation:sway 5s ease-in-out infinite alternate;}
 .beam.b2{animation-duration:4.2s;animation-delay:-1.5s}
 .beam.b3{animation-duration:5.6s;animation-delay:-3s}
@@ -291,7 +329,7 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 5px rgba(
 body.static *{animation-play-state:paused!important;transition:none!important;}
 </style>
 </head>
-<body>
+<body class="boot">
 
 <header class="site-header">
   <div class="header-logo"><span class="wave-ico">🌊</span>WOOSAH <span>CREW</span></div>
@@ -325,8 +363,8 @@ body.static *{animation-play-state:paused!important;transition:none!important;}
     <div class="card legend-card">
       <div class="card-title">How the map works</div>
       <div class="legend-row"><span class="lg-ico ok">✓</span><span><b>Colored</b> zones are unlocked for you</span></div>
-      <div class="legend-row"><span class="lg-ico lock">🔒</span><span><b>Fogged</b> zones unlock at the next tier</span></div>
-      <div class="legend-row"><span class="lg-ico sec">?</span><span><b>Secret</b> zones unlock with a badge, not points</span></div>
+      <div class="legend-row"><span class="lg-ico lock">🔒</span><span><b>Fenced</b> zones open when you hit their tier</span></div>
+      <div class="legend-row"><span class="lg-ico sec">?</span><span><b>Mystery</b> fences open with a badge, not points</span></div>
       <div class="legend-pts">🎟️ <b>20</b>/ticket · 📣 <b>+50</b> flyer share · 🎬 <b>+150</b> original content · 🏆 show milestones</div>
     </div>
   </section>
@@ -370,19 +408,9 @@ body.static *{animation-play-state:paused!important;transition:none!important;}
               <feFlood flood-color="#071010"/><feComposite in2="d" operator="in" result="o"/>
               <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
-            <filter id="desat" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-              <feColorMatrix type="saturate" values="0.12"/>
-              <feComponentTransfer><feFuncR type="linear" slope=".62"/><feFuncG type="linear" slope=".66"/><feFuncB type="linear" slope=".7"/></feComponentTransfer>
-            </filter>
-            <filter id="fogTex" filterUnits="userSpaceOnUse" x="0" y="0" width="400" height="760">
-              <feTurbulence type="fractalNoise" baseFrequency="0.011 0.022" numOctaves="4" seed="7"/>
-              <feColorMatrix type="matrix" values="0 0 0 0 0.72  0 0 0 0 0.8  0 0 0 0 0.8  0 0 0 1.7 -0.55"/>
-            </filter>
-            <filter id="soft" filterUnits="userSpaceOnUse" x="-40" y="-40" width="480" height="840"><feGaussianBlur stdDeviation="7"/></filter>
+            <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="9" fill="#1a0f02" opacity=".16"/></pattern>
+            <pattern id="hatchP" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="9" fill="#2e1065" opacity=".28"/></pattern>
             <filter id="blur2"><feGaussianBlur stdDeviation="2"/></filter>
-            <mask id="fogMask" maskUnits="userSpaceOnUse" x="-40" y="-40" width="480" height="840">
-              <g filter="url(#soft)" id="fogShapes"></g>
-            </mask>
           </defs>
 
           <g id="base">
@@ -394,10 +422,7 @@ body.static *{animation-play-state:paused!important;transition:none!important;}
           </g>
           <g id="arts"></g>
           <rect x="0" y="0" width="400" height="760" fill="url(#vignette)" pointer-events="none"/>
-          <g id="fog" mask="url(#fogMask)" pointer-events="none">
-            <rect x="0" y="0" width="400" height="760" fill="#07110f" opacity=".66"/>
-            <rect x="0" y="0" width="400" height="760" filter="url(#fogTex)" opacity=".85"/>
-          </g>
+          <g id="geo" pointer-events="none"></g>
           <g id="sels"></g>
           <g id="labels"></g>
           <g id="fx" pointer-events="none"></g>
@@ -644,6 +669,7 @@ function person(zone,x,y,col,layer='obj'){ put(zone,layer,`<circle cx="${x}" cy=
   let seams=''; for(let i=0;i<10;i++){const a=i/10*Math.PI*2; seams+=`M62,404 L${(62+Math.cos(a)*22).toFixed(1)},${(404+Math.sin(a)*22).toFixed(1)} `;}
   let dancers=''; const dc=['#00ffea','#f0abfc','#a78bfa','#00ffea','#fde047','#f0abfc','#00ffea','#a78bfa','#fff'];
   for(let i=0;i<9;i++){const a=i/9*Math.PI*2+.3, rr=30+(i%2)*6; const x=62+Math.cos(a)*rr, y=406+Math.sin(a)*rr*.82; dancers+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${dc[i]}" opacity=".25"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.1" fill="#0b1210"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="${dc[i]}"/>`;}
+  put(z,'top',`<g class="mystery"><circle cx="62" cy="408" r="52" fill="url(#glowP)" class="glowpulse"/><circle cx="62" cy="408" r="26" fill="url(#glowP)" class="glowpulse"/><text class="note" x="48" y="414">♪</text><text class="note n2" x="66" y="404">♫</text><text class="note n3" x="58" y="424">♪</text></g>`);
   put(z,'top',`<g class="secret">
     <circle cx="62" cy="404" r="46" fill="url(#glowP)" class="glowpulse"/>
     <g filter="url(#ink)">${stones}</g>
@@ -663,7 +689,6 @@ function person(zone,x,y,col,layer='obj'){ put(zone,layer,`<circle cx="${x}" cy=
   put(z,'fx',`<circle cx="188.5" cy="160" r="16" fill="url(#glowO)" class="glowpulse"/><circle cx="211.5" cy="160" r="16" fill="url(#glowO)" class="glowpulse"/><circle cx="188.5" cy="159" r="2.4" fill="#ffd166" class="flame"/><circle cx="211.5" cy="159" r="2.4" fill="#ffd166" class="flame f2"/>`);
   let fp=''; for(let x=4;x<=364;x+=16) fp+=`<rect x="${x-1.2}" y="296" width="2.4" height="5" fill="#8b949c"/>`;
   put(z,'obj',`<g><rect x="0" y="297.6" width="366" height="1.8" fill="#aab4bc"/>${fp}<rect x="392" y="297.6" width="8" height="1.8" fill="#aab4bc"/></g>`);
-  put(z,'obj',`<g><rect x="349" y="282" width="14" height="11" rx="1.5" fill="#e9dcc0"/><rect x="349" y="282" width="14" height="3" fill="#ff6b00"/><rect x="320" y="286" width="26" height="9" rx="1.5" fill="#15191d"/><text x="333" y="293" text-anchor="middle" font-size="6" fill="#ffb020" font-family="Lilita One" letter-spacing=".3">CREW</text></g>`);
   for(const y of [192,222,252]){
     put(z,'sh',`<rect x="19" y="${y+3}" width="86" height="22" rx="4" fill="#000" opacity=".4"/>`);
     put(z,'obj',`<g><rect x="16" y="${y}" width="86" height="21" rx="4" fill="#e8ecef"/><rect x="16" y="${y+15}" width="86" height="6" rx="3" fill="#cfd6dc"/><rect x="28" y="${y+5}" width="8" height="6" rx="1" fill="#b8c2ca"/><rect x="60" y="${y+5}" width="8" height="6" rx="1" fill="#b8c2ca"/><polygon points="90,${y+5} 91.5,${y+8.5} 95,${y+8.8} 92.3,${y+11} 93.2,${y+14.5} 90,${y+12.5} 86.8,${y+14.5} 87.7,${y+11} 85,${y+8.8} 88.5,${y+8.5}" fill="#f4c430"/></g>`);
@@ -713,36 +738,79 @@ function person(zone,x,y,col,layer='obj'){ put(zone,layer,`<circle cx="${x}" cy=
 })();
 
 /* ---------- mount art + overlays ---------- */
+/* geo-fence lines sit ~6 units inside each zone so neighbouring fences read as separate */
+function fenceD(id){
+  switch(id){
+    case 'village':return 'M6,6 H394 V160 C300,168 100,154 6,162 Z';
+    case 'backstage':return 'M6,174 C100,166 300,180 394,172 V294 H6 Z';
+    case 'disco':return 'M6,306 H118 C130,360 108,460 122,516 H6 Z';
+    case 'stage':return 'M130,306 H394 V516 H134 C120,460 142,360 130,306 Z';
+    case 'gate':return 'M6,528 H394 V643 H6 Z';
+  }
+}
+/* where the path crosses each fence = the gate. tag: r/l = side label, b = below */
+const GATES={gate:{x:200,y:643,tag:'r',dx:44},stage:{x:200,y:516,tag:'r',dx:25},backstage:{x:378,y:294,tag:'l',dx:25},village:{x:200,y:161,tag:'r',dx:27},disco:{x:66,y:516,tag:'b'}};
+const LOCK_ICON=c=>`<path d="M-3.6,-1.6 v-2.4 a3.6,3.6 0 0 1 7.2,0 v2.4" fill="none" stroke="${c}" stroke-width="1.9"/><rect x="-5" y="-2.2" width="10" height="8" rx="1.6" fill="${c}"/><circle cx="0" cy="1.2" r="1.25" fill="#1a1206"/><rect x="-.55" y="1.3" width="1.1" height="2.6" fill="#1a1206"/>`;
 (function mount(){
   let html='';
   ZONES.forEach(z=>{const a=art[z.id]; html+=`<g class="zart" id="art-${z.id}"><g>${a.sh}</g><g filter="url(#ink)">${a.obj}</g><g>${a.fx}</g>${a.top}</g>`;});
   $('#arts').innerHTML=html;
-  let fog='',sel='',hit='',lab='';
+  let geo='',masks='',sel='',hit='',lab='';
   ZONES.forEach(z=>{
-    fog+=`<path class="fogshape" data-z="${z.id}" d="${zoneD(z.id,true)}" fill="#fff"/>`;
     sel+=`<path class="zsel" id="sel-${z.id}" d="${zoneD(z.id,false)}"/>`;
     hit+=`<path class="zhit" data-z="${z.id}" d="${zoneD(z.id,false)}" tabindex="0" role="button" aria-label="${z.name}"/>`;
     const [x,y]=z.label;
-    const lockIcon=z.secret
-      ? `<text x="0" y="-4" text-anchor="middle" font-size="17" fill="#c4b5fd">?</text>`
-      : `<path d="M-4.2,-12.5 v-3.2 a4.2,4.2 0 0 1 8.4,0 v3.2" fill="none" stroke="#ffb020" stroke-width="2.2"/><rect x="-6" y="-13" width="12" height="9.5" rx="1.8" fill="#ffb020"/><circle cx="0" cy="-9.2" r="1.5" fill="#1a1206"/><rect x="-.6" y="-9" width="1.2" height="3" fill="#1a1206"/>`;
-    const sub=z.secret?'BADGE-GATED':`${TIERS[z.tier].name.toUpperCase()} · ${fmt(TIERS[z.tier].min)} PTS`;
-    lab+=`<g transform="translate(${x} ${y})"><g class="zlabel" id="lbl-${z.id}">
+    const lk=z.secret?`<text x="0" y="3.6" text-anchor="middle" font-size="11" fill="#c4b5fd">?</text>`:LOCK_ICON('#ffb020');
+    lab+=`<g transform="translate(${x} ${y})"><g class="zlabel ${z.secret?'sec':''}" id="lbl-${z.id}">
       <g class="lbl-open"><rect class="pill" x="-40" y="-9.5" width="80" height="19" rx="9.5"/><text class="pill-t" x="0" y="3.8" text-anchor="middle">${z.short}</text></g>
-      <g class="lbl-lock"><g class="lock-bob"><circle class="lock-ring" cx="0" cy="-10" r="13" ${z.secret?'style="stroke:#a78bfa"':''}/>${lockIcon}</g>
-        <rect class="pill-lock" x="-50" y="6" width="100" height="30" rx="8" ${z.secret?'style="stroke:rgba(167,139,250,.6)"':''}/>
-        <text class="pill-t2" x="0" y="19" text-anchor="middle">${z.secret?'SECRET ZONE':z.short}</text>
-        <text class="pill-sub" x="0" y="30" text-anchor="middle" ${z.secret?'style="fill:#a78bfa"':''}>${sub}</text></g>
+      <g class="lbl-lock"><rect class="pill-lock" x="-50" y="-9.5" width="100" height="19" rx="9.5"/><g class="mini-lock">${lk}</g><text class="pill-t2" x="7.5" y="3.8" text-anchor="middle">${z.secret?'SECRET ZONE':z.short}</text></g>
     </g></g>`;
+    if(z.id==='parking')return;
+    const g=GATES[z.id], d=fenceD(z.id), sec=!!z.secret;
+    masks+=`<mask id="gm-${z.id}" maskUnits="userSpaceOnUse" x="-10" y="-10" width="420" height="780"><rect x="-10" y="-10" width="420" height="780" fill="#fff"/><rect x="${g.x-19}" y="${g.y-8}" width="38" height="16" fill="#000"/></mask>`;
+    const tagTxt=sec?'BADGE-GATED · ???':`${TIERS[z.tier].name.toUpperCase()} · ${fmt(TIERS[z.tier].min)} PTS`;
+    let tag;
+    if(g.tag==='b') tag=`<g class="gate-tag" data-side="b"><rect class="tag-bg" x="-40" y="11" width="80" height="14" rx="7"/><text class="tag-t" x="0" y="20.8" text-anchor="middle">${tagTxt}</text></g>`;
+    else if(g.tag==='l') tag=`<g class="gate-tag" data-side="l" data-dx="${g.dx}"><rect class="tag-bg" x="${-g.dx-80}" y="-7" width="80" height="14" rx="7"/><text class="tag-t" x="${-g.dx-7}" y="2.8" text-anchor="end">${tagTxt}</text></g>`;
+    else tag=`<g class="gate-tag" data-side="r" data-dx="${g.dx}"><rect class="tag-bg" x="${g.dx}" y="-7" width="80" height="14" rx="7"/><text class="tag-t" x="${g.dx+7}" y="2.8" text-anchor="start">${tagTxt}</text></g>`;
+    const slats=(x0)=>`<path d="M${x0+3},-2.2v4.4M${x0+6},-2.2v4.4M${x0+9},-2.2v4.4M${x0+12},-2.2v4.4" stroke="#6d4a2a" stroke-width=".9"/>`;
+    const lockC=sec?'#a78bfa':'#ffb020';
+    geo+=`<g class="geo ${sec?'secret':''}" id="geo-${z.id}">
+      <path class="hatch" d="${d}" fill="url(#${sec?'hatchP':'hatch'})"/>
+      <g class="rope-grp" mask="url(#gm-${z.id})"><path class="rope-glow" d="${d}"/><path class="rope-glow2" d="${d}"/><path class="rope-base" d="${d}"/><path class="rope" d="${d}" data-fence="${z.id}"/></g>
+      <g class="posts" id="posts-${z.id}"></g>
+      <g class="gate" transform="translate(${g.x} ${g.y})">
+        <g class="door door-l"><rect x="-15" y="-2.4" width="15" height="4.8" rx="1" fill="#c8955a" stroke="#1a1206" stroke-width="1"/>${slats(-15)}</g>
+        <g class="door door-r"><rect x="0" y="-2.4" width="15" height="4.8" rx="1" fill="#c8955a" stroke="#1a1206" stroke-width="1"/>${slats(0)}</g>
+        <rect x="-19.5" y="-4.5" width="4.5" height="9" rx="1" fill="#2a1d0e" stroke="${lockC}" stroke-width="1"/>
+        <rect x="15" y="-4.5" width="4.5" height="9" rx="1" fill="#2a1d0e" stroke="${lockC}" stroke-width="1"/>
+        ${tag}
+        <g class="gate-lock"><g class="gl-bob"><circle r="8.6" fill="#0b1210" stroke="${lockC}" stroke-width="1.8"/>${sec?`<text y="4.2" text-anchor="middle" font-size="12" fill="#c4b5fd">?</text>`:`<g transform="translate(0 .8)">${LOCK_ICON('#ffb020')}</g>`}</g></g>
+      </g>
+    </g>`;
   });
-  $('#fogShapes').innerHTML=fog; $('#sels').innerHTML=sel; $('#hits').innerHTML=hit; $('#labels').innerHTML=lab;
+  $('#map defs').insertAdjacentHTML('beforeend',masks);
+  $('#geo').innerHTML=geo; $('#sels').innerHTML=sel; $('#hits').innerHTML=hit; $('#labels').innerHTML=lab;
+  // stanchion posts along each fence; they drop in a wave outward from the gate
+  document.querySelectorAll('.rope[data-fence]').forEach(p=>{
+    const id=p.dataset.fence, g=GATES[id], L=p.getTotalLength(), n=Math.round(L/19); let out='';
+    for(let i=0;i<n;i++){const pt=p.getPointAtLength(i*L/n); const dist=Math.hypot(pt.x-g.x,pt.y-g.y); if(dist<24)continue;
+      out+=`<g class="post" style="--d:${(.3+dist/650).toFixed(2)}s"><circle class="pc" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="2.6"/><circle cx="${(pt.x-.7).toFixed(1)}" cy="${(pt.y-.8).toFixed(1)}" r=".8" fill="#fff" opacity=".55"/></g>`;}
+    $(`#posts-${id}`).innerHTML=out;
+  });
 })();
 function layoutLabels(){
   document.querySelectorAll('.zlabel').forEach(g=>{
     const t=g.querySelector('.pill-t'), p=g.querySelector('.pill');
     const w=t.getComputedTextLength()+22; p.setAttribute('x',-w/2); p.setAttribute('width',w);
-    const t2=g.querySelector('.pill-t2'), s2=g.querySelector('.pill-sub'), p2=g.querySelector('.pill-lock');
-    const w2=Math.max(t2.getComputedTextLength(),s2.getComputedTextLength())+20; p2.setAttribute('x',-w2/2); p2.setAttribute('width',w2);
+    const t2=g.querySelector('.pill-t2'), p2=g.querySelector('.pill-lock'), ic=g.querySelector('.mini-lock');
+    const T=t2.getComputedTextLength(), C=T+15, w2=C+22; p2.setAttribute('x',-w2/2); p2.setAttribute('width',w2);
+    ic.setAttribute('transform',`translate(${(-C/2+5).toFixed(1)} 0)`);
+  });
+  document.querySelectorAll('.gate-tag').forEach(tg=>{
+    const t=tg.querySelector('.tag-t'), r=tg.querySelector('.tag-bg'), w=t.getComputedTextLength()+14, side=tg.dataset.side, dx=+tg.dataset.dx||0;
+    r.setAttribute('width',w);
+    if(side==='b') r.setAttribute('x',-w/2); else if(side==='l') r.setAttribute('x',-dx-w); else r.setAttribute('x',dx);
   });
 }
 /* ---------- AVATAR ---------- */
@@ -816,7 +884,7 @@ function update(animate){
     if(u&&!was)newly.push(z); if(!u&&was)gone.push(z);
     u?state.unlocked.add(z.id):state.unlocked.delete(z.id);
     $(`#art-${z.id}`).classList.toggle('locked',!u);
-    document.querySelector(`.fogshape[data-z="${z.id}"]`).style.opacity=u?0:1;
+    const geo=$(`#geo-${z.id}`); if(geo)geo.classList.toggle('open',u);
     $(`#lbl-${z.id}`).classList.toggle('is-locked',!u);
   });
   const cur=currentZone();
@@ -898,8 +966,8 @@ function buildControls(){
 /* ---------- FX ---------- */
 function burst(z){
   if(STATIC)return;
-  const [x,y]=z.label, fx=$('#fx'), cols=z.secret?['#c4b5fd','#00ffea','#f0abfc','#fff']:['#00ffea','#ff6b00','#ffd166','#fff'];
-  const ring=document.createElementNS(NS,'circle'); ring.setAttribute('cx',x);ring.setAttribute('cy',y-6);ring.setAttribute('r',10);ring.setAttribute('fill','none');ring.setAttribute('stroke',cols[0]);ring.setAttribute('stroke-width',3);
+  const g=GATES[z.id]||{x:z.label[0],y:z.label[1]}; const [x,y]=[g.x,g.y+6]; const [lx,ly]=z.label; const fx=$('#fx'), cols=z.secret?['#c4b5fd','#00ffea','#f0abfc','#fff']:['#00ffea','#ff6b00','#ffd166','#fff'];
+  const ring=document.createElementNS(NS,'circle'); ring.setAttribute('cx',lx);ring.setAttribute('cy',ly);ring.setAttribute('r',10);ring.setAttribute('fill','none');ring.setAttribute('stroke',cols[0]);ring.setAttribute('stroke-width',3);
   ring.style.transformBox='fill-box';ring.style.transformOrigin='center'; fx.appendChild(ring);
   ring.animate([{transform:'scale(.3)',opacity:1},{transform:'scale(6)',opacity:0}],{duration:900,easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>ring.remove();
   for(let i=0;i<30;i++){
@@ -942,7 +1010,7 @@ if(qz&&ZONE_BY_ID[qz]){ state.sel=qz; state.userPicked=true; renderPanel(); rend
 if(params.get('badgesOpen')==='1')$('#demo').classList.add('badges-open');
 syncDock(); layoutLabels();
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>{layoutLabels(); syncDock(); followAvatar(avPos[1],false);});
-requestAnimationFrame(()=>{state.ready=true; followAvatar(avPos[1],false);});
+requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.classList.remove('boot'); state.ready=true; followAvatar(avPos[1],false);}));
 </script>
 </body>
 </html>
