@@ -699,7 +699,7 @@ async function loadContent() {
         <div style="font-size:24px;">${typeIcons[s.content_type] || '📌'}</div>
         <div style="flex:1;">
           <div style="font-weight:600;font-size:13px;">${s.reps?.name} — ${typeLabels[s.content_type] || s.content_type}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${s.events?.name} · ${s.platform} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${s.events?.name || 'Weekly mix'} · ${s.platform} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
           <a href="${s.url}" target="_blank" style="font-size:11px;color:var(--cyan);margin-top:2px;display:inline-block;">View post →</a>
         </div>
         <div style="display:flex;gap:6px;">
@@ -721,7 +721,7 @@ async function loadContent() {
         <div style="font-size:20px;">${typeIcons[s.content_type] || '📌'}</div>
         <div style="flex:1;">
           <div style="font-weight:500;font-size:13px;">${s.reps?.name} — ${s.platform}</div>
-          <div style="font-size:11px;color:var(--muted);">${s.events?.name} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.events?.name || 'Weekly mix'} · ${new Date(s.submitted_at).toLocaleDateString()}</div>
         </div>
         <span class="badge b-green">+${s.points_awarded} pts</span>
       </div>`).join('');
@@ -737,7 +737,7 @@ async function reviewContent(id, status, repId, eventId, contentType) {
   if (status === 'approved') {
     // Award points
     await sb.from('points_log').insert({
-      rep_id: repId, event_id: eventId,
+      rep_id: repId, event_id: (eventId && eventId !== 'null' && eventId !== 'undefined') ? eventId : null,
       type: contentType === 'original_content' ? 'content_original' : 'content_share',
       points: pts, cash: 0,
       description: `${contentType === 'original_content' ? 'Original content' : 'Flyer share'} approved`

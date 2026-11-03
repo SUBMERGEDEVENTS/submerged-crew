@@ -539,7 +539,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
               <div style="display:flex;gap:12px;"><div class="step-num">1</div><div><div style="font-weight:600;font-size:13px;">Connect your accounts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">We pull your top tracks and taste profile</div></div></div>
               <div style="display:flex;gap:12px;"><div class="step-num">2</div><div><div style="font-weight:600;font-size:13px;">Your taste shapes the mix</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Every Sunday we blend the whole team's data into one playlist</div></div></div>
               <div style="display:flex;gap:12px;"><div class="step-num">3</div><div><div style="font-weight:600;font-size:13px;">Higher rank = more influence</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Legend reps have 3x the influence vs Recruits</div></div></div>
-              <div style="display:flex;gap:12px;"><div class="step-num">4</div><div><div style="font-weight:600;font-size:13px;">Share the mix for +50 pts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Drops every Sunday on the SUB:MERGED Spotify page</div></div></div>
+              <div style="display:flex;gap:12px;"><div class="step-num">4</div><div><div style="font-weight:600;font-size:13px;">Share the mix for +50 pts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Drops every Sunday. Post it, then tap Share to submit the link. Points land once approved.</div></div></div>
             </div>
           </div>
         </div>
@@ -564,7 +564,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
             </div>
             <div style="display:flex;gap:8px;">
               <button style="flex:1;padding:10px;background:#1DB954;border:none;border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:white;cursor:pointer;">Open in Spotify</button>
-              <button onclick="shareMix(this)" style="flex:1;padding:10px;background:var(--cyan-dim);border:1px solid var(--cyan-border);border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--cyan);cursor:pointer;">Share +50 pts</button>
+              <button onclick="shareMix(this)" style="flex:1;padding:10px;background:var(--cyan-dim);border:1px solid var(--cyan-border);border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--cyan);cursor:pointer;">Share for +50 pts</button>
             </div>
           </div>
         </div>
@@ -1307,11 +1307,23 @@ async function disconnectMusic(service) {
   renderMusicConnected();
 }
 
-function shareMix(btn) {
-  btn.textContent = '✓ Shared! +50 pts';
-  btn.style.background = 'var(--green-dim)';
-  btn.style.borderColor = 'rgba(34,197,94,0.3)';
-  btn.style.color = 'var(--green)';
+async function shareMix(btn) {
+  if (!currentRep) return;
+  const url = (prompt('Paste the link to your post sharing this week\'s mix. Points land once a coordinator approves it.') || '').trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) { alert('Please paste a full link starting with http:// or https://'); return; }
+  const host = (()=>{ try { return new URL(url).hostname.toLowerCase(); } catch(e) { return ''; } })();
+  const platform = /instagram/.test(host) ? 'instagram' : /tiktok/.test(host) ? 'tiktok' : /facebook|fb\./.test(host) ? 'facebook' : /youtu/.test(host) ? 'youtube' : /twitter|x\.com/.test(host) ? 'twitter' : 'other';
+  btn.disabled = true;
+  const { error } = await sb.from('content_submissions').insert({
+    rep_id: currentRep.id, event_id: null, platform, content_type: 'flyer_share', url, status: 'pending'
+  });
+  if (error) { btn.disabled = false; alert('Submission failed. Try again.'); return; }
+  btn.textContent = '✓ Submitted. +50 pts once approved';
+  btn.style.background = 'var(--gold-dim)';
+  btn.style.borderColor = 'rgba(234,179,8,0.3)';
+  btn.style.color = 'var(--gold)';
+  loadSubmissions();
 }
 
 // ══════════════════════════════════════════════════════
