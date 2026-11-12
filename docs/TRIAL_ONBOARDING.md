@@ -2,10 +2,10 @@
 
 Production app: https://woosahcrew.com
 
-Goal: dogfood SUB:MERGED on the default tenant, then put 2–3 outside clients on branded links without forking the app.
+Goal: dogfood SUB:MERGED at https://woosahcrew.com/submerged, then put 2-3 outside clients on their own `/{slug}` links without forking the app.
 
 ## What a trial gets
-- Their own branded portal link (`?tenant=<slug>`)
+- Their own branded portal link (`https://woosahcrew.com/<slug>`)
 - Crew signup / login (email confirmation off — immediate login)
 - Access to the current street-team flows on the shared backend
 - A short feedback channel (you pick: text / email / Slack)
@@ -19,8 +19,8 @@ What they do **not** get yet: separate databases, custom feature builds, billing
    - Keep Supabase URL/anon key the same for this trial wave (shared backend)
 3. Commit to `main` (Cloudflare auto-deploys).
 4. Send them:
-   - Portal: `https://woosahcrew.com/?tenant=<slug>`
-   - Admin (if needed): `https://woosahcrew.com/submerged_admin.html?tenant=<slug>`
+   - Portal: `https://woosahcrew.com/<slug>`
+   - Admin (if needed): `https://woosahcrew.com/<slug>/admin`
 5. Ask them to create one admin/test account and one crew account, then run a real week of activity.
 
 ## Message you can paste to a trial client
@@ -28,7 +28,7 @@ Subject: Street team portal trial
 
 Hey, we are trial-ing our street-team ops portal with a few partners.
 
-Your link: https://woosahcrew.com/?tenant=SLUG
+Your link: https://woosahcrew.com/SLUG
 
 1. Open the link and create an account (you’ll be signed in right away).
 2. Use it for real shifts / check-ins this week if you can.
@@ -47,7 +47,7 @@ Client analytics land in Supabase `product_events` (tenant_slug, event_name, pro
 - Clear yes / maybe / no on paying later
 
 ## Operator checklist (you)
-- [ ] SUB:MERGED dogfood on default URL (no `?tenant=`) for a few days
+- [ ] SUB:MERGED dogfood at https://woosahcrew.com/submerged for a few days
 - [ ] Pick 2–3 trial names + slugs
 - [ ] Add tenant JSON + deploy
 - [ ] Send paste message

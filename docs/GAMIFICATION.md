@@ -88,7 +88,7 @@ other reps' ids.
 ## Tenancy
 
 All config is keyed by `tenant_slug`; lookups fall back to `'default'`. The
-portal passes `?tenant=` (default `submerged`). Data tables (`reps`, `sales`)
+portal is served at `/{slug}` (legacy `?tenant=` still works). Data tables (`reps`, `sales`)
 have no tenant column yet, so a shared-backend tenant sees the same reps; a
 tenant with its own Supabase project just needs these migrations applied.
 

@@ -609,7 +609,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 let sb;
 // Tenant slug for gamification RPCs (config falls back to 'default' server-side)
-const TENANT_SLUG = (function(){ try { return new URLSearchParams(location.search).get('tenant') || 'submerged'; } catch(_) { return 'submerged'; } })();
+const TENANT_SLUG = (function(){ try { return (window.resolveTenantSlug && window.resolveTenantSlug()) || ''; } catch(_) { return ''; } })();
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -707,7 +707,7 @@ async function socialLogin(service) {
 
   const { data, error } = await sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: location.origin + location.pathname + location.search }
+    options: { redirectTo: (window.tenantRedirectUrl && window.tenantRedirectUrl()) || (location.origin + location.pathname) }
   });
 
   if (error) {
@@ -770,7 +770,7 @@ async function doSignup() {
     btn.disabled = false; btn.textContent = 'Create account';
     return;
   }
-  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: (window.tenantRedirectUrl && window.tenantRedirectUrl()) || (location.origin + location.pathname) } });
   if (error) {
     err.textContent = error.message; err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';

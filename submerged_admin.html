@@ -452,7 +452,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 let sb, currentAdmin, allEvents = [], allReps = [];
 let gamMap = {}; // rep_id -> derived gamification stats (points/tier/badges)
-const TENANT_SLUG = (function(){ try { return new URLSearchParams(location.search).get('tenant') || 'submerged'; } catch(_) { return 'submerged'; } })();
+const TENANT_SLUG = (function(){ try { return (window.resolveTenantSlug && window.resolveTenantSlug()) || ''; } catch(_) { return ''; } })();
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
