@@ -1,6 +1,6 @@
 # submerged-crew
 
-Multi-tenant street-team portal for **SUB:MERGED** (and trial clients). Reps track promo codes, events, leaderboards, and music-mix missions; coordinators use the admin dashboard.
+Woosah is a multi-tenant street-team portal. Reps track promo codes, events, leaderboards, and music-mix missions; coordinators use the admin dashboard.
 
 ## Phase 1 — product foundation
 
@@ -40,11 +40,11 @@ Config lives in `wrangler.jsonc` (`assets.directory = "."`, observability on, `n
 
 ## Tenants (`?tenant=slug`)
 
-`js/tenant.js` reads `?tenant=`, fetches `tenants/{slug}.json`, falls back to SUB:MERGED defaults, sets `window.AppTenant`, applies CSS variables / title, and dispatches `tenantready`.
+`js/tenant.js` reads `?tenant=`, fetches `tenants/{slug}.json`, falls back to Woosah product defaults, sets `window.AppTenant`, applies CSS variables / title / wordmarks, and dispatches `tenantready`. Pages ship with Woosah chrome in the HTML so the tab title and headers stay product-neutral until tenant config loads.
 
 | Slug | File | Notes |
 | --- | --- | --- |
-| `submerged` (default) | `tenants/submerged.json` | Production brand + Supabase keys extracted from the app |
+| `submerged` (default) | `tenants/submerged.json` | Default dogfood tenant config (brand + keys) |
 | `acme-demo` | `tenants/acme-demo.json` | Demo brand colors; shared demo backend for Phase 1 |
 
 ### Add a trial client
@@ -69,8 +69,8 @@ See `docs/EVENTS.md` and `docs/product_events.sql`. Client helper: `js/analytics
 - Cloudflare Workers static assets (`wrangler.jsonc`)
 
 ## Production
-- Live: https://submerged-crew.shaun-6ad.workers.dev
-- Demo tenant: https://submerged-crew.shaun-6ad.workers.dev/?tenant=acme-demo
+- Live: https://woosahcrew.com
+- Demo tenant: https://woosahcrew.com/?tenant=acme-demo
 - Auto-deploys from `main` via Cloudflare Workers Builds
 
 ## Trial clients

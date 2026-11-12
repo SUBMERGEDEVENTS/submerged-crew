@@ -1,6 +1,6 @@
 # Trial client onboarding (2–3 week wave)
 
-Production app: https://submerged-crew.shaun-6ad.workers.dev
+Production app: https://woosahcrew.com
 
 Goal: dogfood SUB:MERGED on the default tenant, then put 2–3 outside clients on branded links without forking the app.
 
@@ -19,16 +19,16 @@ What they do **not** get yet: separate databases, custom feature builds, billing
    - Keep Supabase URL/anon key the same for this trial wave (shared backend)
 3. Commit to `main` (Cloudflare auto-deploys).
 4. Send them:
-   - Portal: `https://submerged-crew.shaun-6ad.workers.dev/?tenant=<slug>`
-   - Admin (if needed): `https://submerged-crew.shaun-6ad.workers.dev/submerged_admin.html?tenant=<slug>`
+   - Portal: `https://woosahcrew.com/?tenant=<slug>`
+   - Admin (if needed): `https://woosahcrew.com/submerged_admin.html?tenant=<slug>`
 5. Ask them to create one admin/test account and one crew account, then run a real week of activity.
 
 ## Message you can paste to a trial client
 Subject: Street team portal trial
 
-Hey — we’re trial-ing our street-team ops portal with a few partners.
+Hey, we are trial-ing our street-team ops portal with a few partners.
 
-Your link: https://submerged-crew.shaun-6ad.workers.dev/?tenant=SLUG
+Your link: https://woosahcrew.com/?tenant=SLUG
 
 1. Open the link and create an account (you’ll be signed in right away).
 2. Use it for real shifts / check-ins this week if you can.

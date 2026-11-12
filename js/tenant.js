@@ -4,7 +4,7 @@
 (function (global) {
   var FALLBACK = {
     slug: 'submerged',
-    name: 'SUB:MERGED',
+    name: 'Woosah',
     brand: { cyan: '#00D4C8', navy: '#0d1b2e', navy2: '#0a1525' },
     supabaseUrl: 'https://khisgmozkufnzapmldgc.supabase.co',
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c',
@@ -17,7 +17,7 @@
     copy: {
       tagline: 'Street Team Portal',
       adminTagline: 'Admin Dashboard',
-      consentNote: 'By continuing you agree to let SUB:MERGED read your music taste data to personalize your experience. We never post on your behalf.'
+      consentNote: 'By continuing you agree to let this program read your music taste data to personalize your experience. We never post on your behalf.'
     }
   };
 
@@ -80,6 +80,13 @@
     document.querySelectorAll('[data-tenant-consent]').forEach(function (el) {
       if (tenant.copy && tenant.copy.consentNote) el.textContent = tenant.copy.consentNote;
     });
+    document.querySelectorAll('[data-tenant-mix]').forEach(function (el) {
+      el.textContent = tenant.name + ' Weekly Mix';
+    });
+    document.querySelectorAll('[data-tenant-mix-vol]').forEach(function (el) {
+      var vol = el.getAttribute('data-tenant-mix-vol') || '12';
+      el.textContent = tenant.name + ' Vol. ' + vol;
+    });
   }
 
   function finish(tenant) {
@@ -103,7 +110,7 @@
             copy: Object.assign({}, FALLBACK.copy, data.copy || {})
           });
         } else {
-          console.warn('tenant config not found for', slug, '— using submerged defaults');
+          console.warn('tenant config not found for', slug, '- using product defaults');
         }
       } catch (e) {
         console.warn('tenant load failed, using defaults', e);

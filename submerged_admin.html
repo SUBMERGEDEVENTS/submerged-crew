@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin · SUB:MERGED</title>
+<title>Admin · Woosah Crew</title>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -145,6 +145,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 </style>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="any">
+  <script src="/js/tenant.js"></script>
 </head>
 <body>
 
@@ -153,8 +154,8 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <div class="login-wrap">
     <div style="text-align:center;margin-bottom:2rem;">
       <div style="font-size:42px;">🤿</div>
-      <div style="font-family:var(--font-head);font-size:34px;font-weight:900;letter-spacing:0.06em;">SUB<span style="color:var(--cyan);">:</span>MERGED</div>
-      <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cyan);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Admin Dashboard</div>
+      <div class="header-logo" data-tenant-name style="font-size:34px;text-align:center;">Woosah</div>
+      <div data-tenant-tagline style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cyan);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Admin Dashboard</div>
     </div>
     <div class="login-card">
       <div class="login-title">Admin Sign In</div>
@@ -174,7 +175,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <div class="shell">
     <div class="header">
       <div style="display:flex;align-items:center;gap:12px;">
-        <div class="header-logo">SUB<span>:</span>MERGED</div>
+        <div class="header-logo" data-tenant-name>Woosah</div>
         <div class="header-tag">Admin</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -934,7 +935,7 @@ async function sendAI() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        system: `You are the AI coordinator for SUB:MERGED EVENTS street team program. Admin context:
+        system: `You are the AI coordinator for the ${(window.AppTenant && AppTenant.name) || 'Woosah'} street team program. Admin context:
 
 ACTIVE EVENT: ${activeEvent ? `${activeEvent.name} at ${activeEvent.venue}, ${activeEvent.city} on ${activeEvent.date}. ${activeEvent.tickets_sold}/${activeEvent.capacity} tickets sold.` : 'No active event'}
 TOTAL REPS: ${allReps.length}
