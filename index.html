@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Street Team Portal · SUB:MERGED</title>
+<title>Woosah Crew</title>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
 // Load Supabase with fallback CDNs
@@ -249,6 +249,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 </style>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="any">
+  <script src="/js/tenant.js"></script>
 </head>
 <body>
 
@@ -267,8 +268,8 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <div class="login-wrap">
     <div>
       <span class="logo-diver">🤿</span>
-      <div class="logo-wordmark">SUB<span>:</span>MERGED</div>
-      <div class="logo-tag">Street Team Portal</div>
+      <div class="logo-wordmark" data-tenant-name>Woosah</div>
+      <div class="logo-tag" data-tenant-tagline>Street Team Portal</div>
     </div>
     <div class="login-card">
 
@@ -301,7 +302,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           ✉️ Continue with email
         </button>
 
-        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to let SUB:MERGED read your music taste data to personalize your experience. We never post on your behalf.</div>
+        <div data-tenant-consent style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to let this program read your music taste data to personalize your experience. We never post on your behalf.</div>
       </div>
 
       <!-- EMAIL FALLBACK — hidden by default -->
@@ -360,7 +361,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 <div id="screen-app" class="screen">
   <div class="app-shell">
     <div class="site-header">
-      <div class="header-logo">SUB<span>:</span>MERGED</div>
+      <div class="header-logo" data-tenant-name>Woosah</div>
       <div class="header-right">
         <div class="rep-pill">
           <div class="rep-av" id="header-av" style="background:var(--cyan-dim);color:var(--cyan);">?</div>
@@ -523,7 +524,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <div id="music-disconnected">
           <div class="card" style="text-align:center;padding:2rem 1.5rem;">
             <div style="font-size:48px;margin-bottom:1rem;">🎧</div>
-            <div style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:8px;">SUB:MERGED Weekly Mix</div>
+            <div data-tenant-mix style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:8px;">Woosah Weekly Mix</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">Connect your music and your taste shapes the team's weekly playlist. Higher rank = more influence.</div>
             <div style="max-width:300px;margin:0 auto;">
               <button class="connect-btn spotify" onclick="connectMusic('spotify')">Connect Spotify</button>
@@ -557,7 +558,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
               <div>
                 <div style="font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">This week's mix</div>
-                <div style="font-family:var(--font-head);font-size:22px;font-weight:900;">SUB:MERGED Vol. 12</div>
+                <div data-tenant-mix-vol="12" style="font-family:var(--font-head);font-size:22px;font-weight:900;">Woosah Vol. 12</div>
                 <div style="font-family:var(--font-head);font-size:13px;color:var(--cyan);font-weight:600;margin-top:2px;">Week of Apr 7, 2026 · 24 tracks · 1h 38m</div>
               </div>
               <div style="background:var(--cyan);width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🌊</div>
@@ -608,7 +609,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 let sb;
 // Tenant slug for gamification RPCs (config falls back to 'default' server-side)
-const TENANT_SLUG = (function(){ try { return new URLSearchParams(location.search).get('tenant') || 'submerged'; } catch(_) { return 'submerged'; } })();
+const TENANT_SLUG = (function(){ try { return (window.resolveTenantSlug && window.resolveTenantSlug()) || ''; } catch(_) { return ''; } })();
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -706,7 +707,7 @@ async function socialLogin(service) {
 
   const { data, error } = await sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: 'https://submerged-crew.shaun-6ad.workers.dev' }
+    options: { redirectTo: (window.tenantRedirectUrl && window.tenantRedirectUrl()) || (location.origin + location.pathname) }
   });
 
   if (error) {
@@ -769,7 +770,7 @@ async function doSignup() {
     btn.disabled = false; btn.textContent = 'Create account';
     return;
   }
-  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: (window.tenantRedirectUrl && window.tenantRedirectUrl()) || (location.origin + location.pathname) } });
   if (error) {
     err.textContent = error.message; err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';

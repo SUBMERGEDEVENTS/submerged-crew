@@ -91,7 +91,7 @@ function testSpotify() {
   log('🔄 Initiating Spotify OAuth...', '#1DB954');
   window._sb.auth.signInWithOAuth({
     provider: 'spotify',
-    options: { redirectTo: 'https://submergedevents.github.io/submerged-crew' }
+    options: { redirectTo: location.origin + location.pathname + location.search }
   }).then(function(res) {
     if (res.error) {
       log('❌ Spotify error: ' + res.error.message, '#f87171');

@@ -19,3 +19,9 @@ docs/**
 # Supabase SQL (migrations) — repo-only, not a static asset
 supabase
 supabase/**
+
+# Worker source and install files, not site assets
+src
+src/**
+package.json
+package-lock.json
