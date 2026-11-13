@@ -52,6 +52,62 @@ function normalizePath(pathname) {
   return path;
 }
 
+function isVideoAssetPath(pathname) {
+  var p = pathname.toLowerCase();
+  return p.startsWith('/assets/') && (p.endsWith('.mp4') || p.endsWith('.webm'));
+}
+
+// Single byte-range only. Returns { start, end } inclusive, null to ignore
+// the header, or 'unsatisfiable' for a 416.
+function parseSingleByteRange(header, size) {
+  if (!header) return null;
+  var value = String(header).trim();
+  var suffix = /^bytes\s*=\s*-(\d+)$/i.exec(value);
+  if (suffix) {
+    var len = Number(suffix[1]);
+    if (len === 0 || size === 0) return 'unsatisfiable';
+    return { start: Math.max(0, size - len), end: size - 1 };
+  }
+  var m = /^bytes\s*=\s*(\d+)-(\d+)?$/i.exec(value);
+  if (!m) return null;
+  var start = Number(m[1]);
+  var end = m[2] === undefined || m[2] === '' ? size - 1 : Number(m[2]);
+  if (size === 0 || start >= size) return 'unsatisfiable';
+  if (end >= size) end = size - 1;
+  if (start > end) return 'unsatisfiable';
+  return { start: start, end: end };
+}
+
+async function serveVideoAsset(env, request) {
+  var assetReq = new Request(new URL(request.url), { method: 'GET' });
+  var asset = await env.ASSETS.fetch(assetReq);
+  if (!asset.ok) return asset;
+
+  var body = await asset.arrayBuffer();
+  var size = body.byteLength;
+  var headers = new Headers(asset.headers);
+  headers.set('Accept-Ranges', 'bytes');
+
+  var range = parseSingleByteRange(request.headers.get('Range'), size);
+  var isHead = request.method === 'HEAD';
+
+  if (range === 'unsatisfiable') {
+    headers.set('Content-Range', 'bytes */' + size);
+    headers.set('Content-Length', '0');
+    return new Response(null, { status: 416, headers: headers });
+  }
+
+  if (!range) {
+    headers.set('Content-Length', String(size));
+    return new Response(isHead ? null : body, { status: 200, headers: headers });
+  }
+
+  headers.set('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + size);
+  headers.set('Content-Length', String(range.end - range.start + 1));
+  var slice = body.slice(range.start, range.end + 1);
+  return new Response(isHead ? null : slice, { status: 206, headers: headers });
+}
+
 function isStaticAssetPath(pathname) {
   var p = pathname.toLowerCase();
   if (p.startsWith('/js/') || p.startsWith('/tenants/') || p.startsWith('/assets/')) return true;
@@ -172,6 +228,9 @@ export default {
     if (isStaticAssetPath(path)) {
       if (path === '/terms') {
         return fetchAsset(env, request, '/terms.html');
+      }
+      if (isVideoAssetPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
+        return serveVideoAsset(env, request);
       }
       return env.ASSETS.fetch(request);
     }
