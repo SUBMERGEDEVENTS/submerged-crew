@@ -33,6 +33,23 @@ Deno.serve(async (req) => {
     const action = body.config?.action ?? null;
     const apiUrl = body.api_url;
 
+    // Shared secret: register the webhook URL as .../eventbrite-webhook?key=<WEBHOOK_SECRET>
+    const WEBHOOK_SECRET = Deno.env.get('EVENTBRITE_WEBHOOK_SECRET');
+    if (!WEBHOOK_SECRET || new URL(req.url).searchParams.get('key') !== WEBHOOK_SECRET) {
+      return json({ error: 'unauthorized' }, 401);
+    }
+
+    // Only ever send the Eventbrite token to Eventbrite's own API.
+    let apiHostOk = false;
+    try {
+      const u = new URL(String(apiUrl || ''));
+      apiHostOk = u.protocol === 'https:' && u.hostname === 'www.eventbriteapi.com';
+    } catch (_) { apiHostOk = false; }
+    if (apiUrl && !apiHostOk) {
+      await logInbox(sb, { action, outcome: 'rejected', detail: 'api_url is not www.eventbriteapi.com' });
+      return json({ error: 'invalid api_url' }, 400);
+    }
+
     if (action !== 'order.placed' || !apiUrl) {
       await logInbox(sb, { action, outcome: 'ignored', detail: 'Not order.placed or missing api_url', payload: body });
       return json({ ignored: true, action }, 200);
