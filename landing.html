@@ -236,6 +236,40 @@
     }
     .hero-cta { margin-bottom: 2rem; }
 
+    .works-with {
+      margin: 1.15rem 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .hero .works-with {
+      margin: 1.1rem 0 0;
+      text-align: center;
+    }
+    .works-with .live {
+      color: var(--ink);
+      font-weight: 750;
+    }
+    .works-with .live-mark {
+      display: inline-block;
+      margin-left: 0.28rem;
+      padding: 0.08rem 0.45rem;
+      border-radius: 999px;
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      vertical-align: 0.08em;
+    }
+    .feature-copy .works-with {
+      margin-top: 1.1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+    }
+
     .video-frame {
       position: relative;
       border-radius: calc(var(--radius) + 4px);
@@ -375,6 +409,8 @@
       color: var(--muted);
       max-width: 36rem;
     }
+    .cta-card .intro p { margin: 0; }
+    .cta-card .intro p + p { margin-top: 0.45rem; }
 
     form.demo { display: grid; gap: 0.9rem; }
     .row {
@@ -548,6 +584,7 @@
           </video>
           <button type="button" class="unmute" id="unmute" hidden>Sound on</button>
         </div>
+        <p class="works-with">Works with <span class="live">Eventbrite</span> <span class="live-mark">Live</span>. Posh, Tixr, DICE and more coming soon.</p>
       </div>
     </section>
 
@@ -609,6 +646,7 @@
             <p class="eyebrow">Automatic sales credit</p>
             <h2>Every sale <em>credited.</em> Automatically.</h2>
             <p>Eventbrite orders that use a rep's promo code land on the right rep.</p>
+            <p class="works-with">Works with <span class="live">Eventbrite</span> <span class="live-mark">Live</span>. Posh, Tixr, DICE and more coming soon.</p>
           </div>
           <div class="feature-visual">
             <img src="/assets/features/sales.webp" width="780" height="980" alt="A ticket order using a rep promo code is credited to that rep, with tickets and points updating automatically." />
@@ -666,7 +704,10 @@
       <div class="wrap">
         <div class="cta-card">
           <h2>Book a demo</h2>
-          <p class="intro">Invite-only early access. Tell us about your team and we'll be in touch.</p>
+          <div class="intro">
+            <p>Invite-only early access. Tell us about your team and we'll be in touch.</p>
+            <p>Use another ticketing platform? Tell us which one.</p>
+          </div>
 
           <div class="success-box" id="demo-success" role="status">
             <h3>Request received</h3>
