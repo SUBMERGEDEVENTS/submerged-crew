@@ -386,22 +386,22 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <div class="metrics">
           <div class="metric">
             <div class="metric-label">Codes sold</div>
-            <div class="metric-val" id="m-codes">—</div>
+            <div class="metric-val" id="m-codes">-</div>
             <div class="metric-sub">this event</div>
           </div>
           <div class="metric">
             <div class="metric-label">Cash earned</div>
-            <div class="metric-val" id="m-cash">—</div>
+            <div class="metric-val" id="m-cash">-</div>
             <div class="metric-sub">pending payout</div>
           </div>
           <div class="metric">
             <div class="metric-label">Total points</div>
-            <div class="metric-val" id="m-pts">—</div>
+            <div class="metric-val" id="m-pts">-</div>
             <div class="metric-sub">lifetime</div>
           </div>
           <div class="metric">
             <div class="metric-label">Content posts</div>
-            <div class="metric-val" id="m-posts">—</div>
+            <div class="metric-val" id="m-posts">-</div>
             <div class="metric-sub">approved</div>
           </div>
         </div>
@@ -434,7 +434,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
           <div class="code-display">
             <div class="code-label">Share this to earn</div>
-            <div class="code-val" id="my-code">—</div>
+            <div class="code-val" id="my-code">-</div>
             <button class="code-copy" onclick="copyCode()">Copy code</button>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
@@ -445,7 +445,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
         <div class="card">
           <div class="card-title">Recent activity</div>
-          <div id="activity-feed"><div class="empty"><div class="empty-icon">📭</div>No activity yet — start sharing your code!</div></div>
+          <div id="activity-feed"><div class="empty"><div class="empty-icon">📭</div>No activity yet. Start sharing your code!</div></div>
         </div>
       </div>
 
@@ -484,7 +484,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
       <div id="view-submit" class="view">
         <div class="card">
           <div class="card-title">Submit content for points</div>
-          <div class="section-sub">Post on social then submit the link — we'll approve and award your points</div>
+          <div class="section-sub">Post on social then submit the link. We'll approve and award your points</div>
           <div class="submit-area" onclick="openSubmitForm()">
             <div style="font-size:32px;margin-bottom:8px;">📲</div>
             <div style="font-family:var(--font-head);font-size:15px;font-weight:700;">Drop a link to your post</div>
@@ -532,7 +532,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
               <button class="connect-btn youtube" onclick="connectMusic('youtube')">Connect YouTube Music</button>
               <button class="connect-btn soundcloud" onclick="connectMusic('soundcloud')">Connect SoundCloud</button>
             </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:1.25rem;">Read-only access — we never post or modify anything</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1.25rem;">Read-only access: we never post or modify anything</div>
           </div>
           <div class="card">
             <div class="card-title">How the mix works</div>
@@ -578,10 +578,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           <div style="font-size:44px;margin-bottom:6px;">🎁</div>
           <div class="soon-pill">Coming soon</div>
           <div style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:8px;">Rewards store</div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:420px;margin:0 auto;">Soon you'll be able to spend your points on crew rewards. Keep stacking now — every ticket sold with your code adds to your balance.</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:420px;margin:0 auto;">Soon you'll be able to spend your points on crew rewards. Keep stacking now. Every ticket sold with your code adds to your balance.</div>
           <div style="margin-top:1.25rem;display:inline-flex;align-items:baseline;gap:8px;padding:10px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;">
             <span style="font-size:11px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Your points</span>
-            <span style="font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--cyan);" id="store-pts">—</span>
+            <span style="font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--cyan);" id="store-pts">-</span>
           </div>
         </div>
         <div class="card">
@@ -765,7 +765,7 @@ async function doSignup() {
   btn.disabled = true; btn.textContent = 'Creating account...';
   const available = await isPromoAvailable(code);
   if (available === false) {
-    err.textContent = 'That promo code is already taken — try another.';
+    err.textContent = 'That promo code is already taken. Try another.';
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';
     return;
@@ -787,7 +787,7 @@ async function doSignup() {
     lifetime_points: 0
   });
   if (repErr) {
-    err.textContent = repErr.message.includes('promo_code') ? 'That promo code is already taken — try another.' : repErr.message;
+    err.textContent = repErr.message.includes('promo_code') ? 'That promo code is already taken. Try another.' : repErr.message;
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';
     return;
@@ -1030,10 +1030,10 @@ function renderRankCard() {
   const pts = currentRep.lifetime_points;
   const tiers = [
     {name:'Recruit',icon:'🎫',color:'var(--muted)',min:0,max:400,sub:'Sell codes to level up to Rising Star',prog:Math.min(100,Math.round((pts/400)*100))},
-    {name:'Rising Star',icon:'🌟',color:'#22c55e',min:400,max:1000,sub:'Keep going — Hotshot unlocks $2.50/code',prog:Math.min(100,Math.round(((pts-400)/600)*100))},
+    {name:'Rising Star',icon:'🌟',color:'#22c55e',min:400,max:1000,sub:'Keep going: Hotshot unlocks $2.50/code',prog:Math.min(100,Math.round(((pts-400)/600)*100))},
     {name:'Hotshot',icon:'⚡',color:'#a78bfa',min:1000,max:2500,sub:'Reach Closer for $3/code + cash bonuses',prog:Math.min(100,Math.round(((pts-1000)/1500)*100))},
-    {name:'Closer',icon:'🔥',color:'#00D4C8',min:2500,max:5000,sub:'Almost at Legend — the top of the team',prog:Math.min(100,Math.round(((pts-2500)/2500)*100))},
-    {name:'Legend',icon:'👑',color:'#f0b429',min:5000,max:5000,sub:'Top tier — $3/code + VIP guest list',prog:100},
+    {name:'Closer',icon:'🔥',color:'#00D4C8',min:2500,max:5000,sub:'Almost at Legend: the top of the team',prog:Math.min(100,Math.round(((pts-2500)/2500)*100))},
+    {name:'Legend',icon:'👑',color:'#f0b429',min:5000,max:5000,sub:'Top tier: $3/code + VIP guest list',prog:100},
   ];
   const tier = tiers.find(t=>t.name===rank) || tiers[0];
   document.getElementById('rank-icon').textContent = tier.icon;
@@ -1054,7 +1054,7 @@ async function renderActivityFeed() {
     .order('created_at', {ascending:false}).limit(8);
   const feed = document.getElementById('activity-feed');
   if (!data || data.length === 0) {
-    feed.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No activity yet — start sharing your code!</div>';
+    feed.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No activity yet. Start sharing your code!</div>';
     return;
   }
   const icons = {sale:'🎫',content_share:'📸',content_original:'🎥',milestone_10:'💫',milestone_25:'💫',milestone_50:'💫',sellout_bonus:'🚀',mix_share:'🎵'};
@@ -1159,7 +1159,7 @@ async function loadLeaderboard() {
   document.getElementById('lb-sub').textContent = eventId ? 'Points from tickets sold for this show' : 'Top reps by points across all shows';
   const { data, error } = await sb.rpc('gamification_leaderboard', { p_event_id: eventId, p_limit: 25, p_tenant: TENANT_SLUG });
   if (error) { console.warn('leaderboard RPC failed, falling back', error); return renderLeaderboardLegacy(allEvents); }
-  if (!data || data.length === 0) { list.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps on this board yet — be the first!</div>'; return; }
+  if (!data || data.length === 0) { list.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps on this board yet. Be the first!</div>'; return; }
   const rankNums = { 1: 'r1', 2: 'r2', 3: 'r3' };
   const maxPts = Math.max(1, ...data.map(r => r.points || 0));
   list.innerHTML = data.map(r => {
@@ -1191,7 +1191,7 @@ async function renderLeaderboardLegacy(events) {
     .select('*, reps(name, rank, promo_code)')
     .eq('event_id', activeEvent.id)
     .order('points_earned', {ascending:false}).limit(10);
-  if (!data || data.length === 0) { document.getElementById('lb-list').innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps have joined yet — be the first!</div>'; return; }
+  if (!data || data.length === 0) { document.getElementById('lb-list').innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps have joined yet. Be the first!</div>'; return; }
   const rankColors = {'Legend':'rgba(240,180,41,0.15)','Closer':'var(--cyan-dim)','Hotshot':'var(--purple-dim)','Rising Star':'var(--green-dim)','Recruit':'var(--surface3)'};
   const rankText = {'Legend':'#f0b429','Closer':'#00D4C8','Hotshot':'#a78bfa','Rising Star':'#22c55e','Recruit':'#7a8799'};
   const rankNums = ['r1','r2','r3'];
