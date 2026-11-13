@@ -61,7 +61,7 @@ window.onload = async function() {
     if (error) {
       log('⚠️ DB query error: ' + error.message, '#f0b429');
     } else {
-      log('✅ Database reachable — events table found', '#22c55e');
+      log('✅ Database reachable: events table found', '#22c55e');
     }
   } catch(e) {
     log('❌ Network error reaching Supabase: ' + e.message, '#f87171');
@@ -73,14 +73,14 @@ window.onload = async function() {
     if (session) {
       log('✅ Already logged in as: ' + (session.user.email || session.user.id), '#22c55e');
     } else {
-      log('ℹ️ No active session — not logged in', '#aaa');
+      log('ℹ️ No active session: not logged in', '#aaa');
     }
   } catch(e) {
     log('❌ Auth error: ' + e.message, '#f87171');
   }
 
   document.getElementById('status').textContent = '✅ Supabase connection working';
-  document.getElementById('detail').textContent = 'All systems go — test login below';
+  document.getElementById('detail').textContent = 'All systems go. Test login below';
   document.getElementById('spotify-btn').style.display = 'inline-block';
   document.getElementById('email-btn').style.display = 'inline-block';
 
