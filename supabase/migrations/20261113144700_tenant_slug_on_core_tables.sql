@@ -1,16 +1,9 @@
 -- =============================================================================
--- NOT APPLIED
+-- APPLIED 2026-11-13 to project khisgmozkufnzapmldgc via apply_migration
+-- (name: tenant_slug_on_core_tables). Runnable SQL only; the commented
+-- RLS follow-up at the bottom was not executed.
 --
--- Proposed migration only. This file has not been run against the live
--- Supabase project (khisgmozkufnzapmldgc). Do not apply it as part of
--- opening or merging this pull request.
---
--- Apply this manually after review, and only then merge or deploy the
--- admin frontend changes in this branch. If the frontend ships first,
--- admin queries that filter on tenant_slug will fail because the column
--- does not exist yet.
---
--- What this does, once applied:
+-- What this did:
 --   1. Adds a nullable tenant_slug column to the core public tables.
 --   2. Leaves existing rows NULL. The app treats NULL as the dogfood
 --      tenant "submerged", which is how all of this data was treated
