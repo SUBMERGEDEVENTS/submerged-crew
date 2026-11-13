@@ -16,6 +16,7 @@ const RESERVED_SLUGS = new Set([
   'src',
   'docs',
   'supabase',
+  'assets',
   'admin',
   'favicon.ico',
   'favicon.svg',
@@ -53,7 +54,7 @@ function normalizePath(pathname) {
 
 function isStaticAssetPath(pathname) {
   var p = pathname.toLowerCase();
-  if (p.startsWith('/js/') || p.startsWith('/tenants/')) return true;
+  if (p.startsWith('/js/') || p.startsWith('/tenants/') || p.startsWith('/assets/')) return true;
   if (
     p === '/favicon.ico' ||
     p === '/favicon.svg' ||
