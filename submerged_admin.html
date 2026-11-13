@@ -323,6 +323,19 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
       <!-- ── PAYOUTS ── -->
       <div id="view-payouts" class="view">
+        <div class="card" id="pay-rates-card">
+          <div class="card-title">Pay rates</div>
+          <div class="section-sub">Cash per ticket sold with a rep's code, by rank. Applies to new sales from Eventbrite and manual entries.</div>
+          <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;">
+            <div class="form-group"><label class="form-label">Recruit</label><input class="form-input" data-rate="Recruit" type="number" min="0" max="100" step="0.25" /></div>
+            <div class="form-group"><label class="form-label">Rising Star</label><input class="form-input" data-rate="Rising Star" type="number" min="0" max="100" step="0.25" /></div>
+            <div class="form-group"><label class="form-label">Hotshot</label><input class="form-input" data-rate="Hotshot" type="number" min="0" max="100" step="0.25" /></div>
+            <div class="form-group"><label class="form-label">Closer</label><input class="form-input" data-rate="Closer" type="number" min="0" max="100" step="0.25" /></div>
+            <div class="form-group"><label class="form-label">Legend</label><input class="form-input" data-rate="Legend" type="number" min="0" max="100" step="0.25" /></div>
+          </div>
+          <button class="form-btn" onclick="savePayRates()">Save rates</button>
+          <div id="rates-msg" style="display:none;margin-top:8px;font-size:12px;"></div>
+        </div>
         <div class="card cyan-l">
           <div class="card-title">Payout report</div>
           <div class="section-sub">Cash owed to each rep based on codes sold + milestone bonuses</div>
@@ -359,6 +372,26 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
       <!-- ── EVENTS ── -->
       <div id="view-events" class="view">
+        <div class="card" id="eventbrite-card">
+          <div class="card-title">Eventbrite connection</div>
+          <div class="section-sub" id="eb-status">Loading...</div>
+          <div class="form-group">
+            <label class="form-label">Eventbrite private token</label>
+            <input class="form-input" id="eb-token" type="password" autocomplete="off" placeholder="Paste a new token to connect or replace" />
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5;">Find it in Eventbrite under Account Settings, Developer Links, API Keys. It is stored encrypted and can't be viewed again, only replaced.</div>
+          <button class="form-btn" onclick="saveEventbriteToken()">Save token</button>
+          <div class="form-group" style="margin-top:14px;">
+            <label class="form-label">Webhook URL for Eventbrite</label>
+            <input class="form-input" id="eb-webhook-url" type="text" readonly onclick="this.select()" />
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5;">In Eventbrite, add a webhook with this URL for the Order Placed action. Keep it private: anyone with it can send orders here.</div>
+          <div style="display:flex;gap:8px;">
+            <button class="form-btn" style="background:var(--cyan-dim) !important;color:var(--cyan) !important;border:1px solid var(--cyan-border) !important;" onclick="copyWebhookUrl(this)">Copy URL</button>
+            <button class="form-btn" style="background:transparent !important;color:var(--muted) !important;border:1px solid var(--border2) !important;" onclick="rotateWebhookKey()">New key</button>
+          </div>
+          <div id="eb-msg" style="display:none;margin-top:8px;font-size:12px;"></div>
+        </div>
         <div class="card">
           <div class="card-title">Add new event</div>
           <div class="form-grid">
@@ -542,8 +575,10 @@ async function loadAllData() {
     if (!repEventMap[row.rep_id]) repEventMap[row.rep_id] = [];
     if (!repEventMap[row.rep_id].includes(name)) repEventMap[row.rep_id].push(name);
   });
+  await loadPayRates();
   populateEventSelects();
   loadInvites();
+  loadEventbrite();
   loadOverview();
   renderPointsLeaderboard();
   loadRepsTable();
@@ -779,12 +814,12 @@ async function loadPayouts() {
     return;
   }
 
-  const rates = { Legend: 3, Closer: 3, Hotshot: 2.5, 'Rising Star': 2, Recruit: 2 };
+  const rates = payRates;
   let grandTotal = 0;
 
   document.getElementById('payouts-table-body').innerHTML = data.map(re => {
     const rank = re.reps?.rank || 'Recruit';
-    const rate = rates[rank] || 2;
+    const rate = rateFor(rank);
     const basePay = re.codes_sold * rate;
     const bonuses = parseFloat(re.cash_earned || 0) - basePay;
     const total = parseFloat(re.cash_earned || 0);
@@ -817,12 +852,95 @@ function exportPayouts() {
   a.click();
 }
 
+// Records a payouts row per rep (amount, admin, time) and zeroes balances in
+// one database transaction, only inside this team.
 async function markAllPaid() {
-  if (!confirm('Mark all pending payouts as paid?')) return;
   const eventId = document.getElementById('payout-event-filter').value;
-  await scope(sb.from('rep_events').update({ cash_earned: 0 }).eq('event_id', eventId));
-  alert('All payouts marked as paid and reset to $0');
+  if (!eventId) return;
+  if (!confirm('Mark every rep on this event as paid? Each payout is recorded, then balances reset to $0.')) return;
+  const { data, error } = await sb.rpc('mark_event_payouts_paid', { p_event_id: eventId });
+  if (error) { alert('Could not mark payouts paid: ' + error.message); return; }
+  alert(`Recorded ${data.reps_paid} payout(s) totaling $${Number(data.total || 0).toFixed(2)}. Balances reset to $0.`);
   loadPayouts();
+}
+
+// ── PAY RATES ──
+const DEFAULT_RATES = { Recruit: 2, 'Rising Star': 2, Hotshot: 2.5, Closer: 3, Legend: 3 };
+let payRates = Object.assign({}, DEFAULT_RATES);
+function rateFor(rank) {
+  const r = Number(payRates[rank] ?? payRates.Recruit);
+  return Number.isFinite(r) ? r : 0;
+}
+async function loadPayRates() {
+  const { data, error } = await sb.rpc('tenant_pay_rates', { p_tenant: tenantSlug() });
+  if (!error && data) payRates = Object.assign({}, DEFAULT_RATES, data);
+  document.querySelectorAll('[data-rate]').forEach(i => { i.value = Number(payRates[i.dataset.rate] ?? 0).toFixed(2); });
+}
+async function savePayRates() {
+  const msg = document.getElementById('rates-msg');
+  const rates = {};
+  let bad = false;
+  document.querySelectorAll('[data-rate]').forEach(i => {
+    const v = Number(i.value);
+    if (i.value === '' || !Number.isFinite(v) || v < 0 || v > 100) bad = true; else rates[i.dataset.rate] = v;
+  });
+  msg.style.display = 'block';
+  if (bad) { msg.style.color = '#ef4444'; msg.textContent = 'Each rate must be a number from 0 to 100.'; return; }
+  const { data, error } = await sb.rpc('set_tenant_pay_rates', { p_tenant: tenantSlug(), p_rates: rates });
+  if (error) { msg.style.color = '#ef4444'; msg.textContent = 'Could not save rates: ' + error.message; return; }
+  payRates = Object.assign({}, DEFAULT_RATES, data);
+  msg.style.color = 'var(--cyan)'; msg.textContent = 'Rates saved. New sales use them from now on.';
+  loadPayouts();
+}
+
+// ── EVENTBRITE ──
+let ebConn = null;
+function webhookUrl() {
+  if (!ebConn || !ebConn.webhook_key) return '';
+  return SUPABASE_URL + '/functions/v1/eventbrite-webhook?tenant=' + encodeURIComponent(ebConn.tenant) + '&key=' + encodeURIComponent(ebConn.webhook_key);
+}
+function renderEventbrite() {
+  const st = document.getElementById('eb-status');
+  if (!st) return;
+  if (!ebConn) { st.textContent = 'Could not load the Eventbrite connection.'; return; }
+  st.textContent = ebConn.connected
+    ? `Connected. Token ending in ${ebConn.token_last4 || '????'}, saved ${new Date(ebConn.token_set_at).toLocaleDateString()}.`
+    : (tenantSlug() === 'submerged'
+        ? 'Using the original team connection. Save a token here to switch this team to its own.'
+        : 'Not connected. Save your Eventbrite private token to credit sales automatically.');
+  document.getElementById('eb-webhook-url').value = webhookUrl();
+}
+async function loadEventbrite() {
+  const { data, error } = await sb.rpc('eventbrite_connection', { p_tenant: tenantSlug() });
+  ebConn = error ? null : data;
+  renderEventbrite();
+}
+function ebMsg(text, ok) {
+  const m = document.getElementById('eb-msg');
+  m.style.display = 'block'; m.style.color = ok ? 'var(--cyan)' : '#ef4444'; m.textContent = text;
+}
+async function saveEventbriteToken() {
+  const input = document.getElementById('eb-token');
+  const tok = input.value.trim();
+  if (!tok) { ebMsg('Paste your Eventbrite private token first.', false); return; }
+  const { data, error } = await sb.rpc('set_eventbrite_token', { p_tenant: tenantSlug(), p_token: tok });
+  input.value = '';
+  if (error) { ebMsg('Could not save the token: ' + error.message, false); return; }
+  ebConn = data; renderEventbrite();
+  ebMsg('Token saved.', true);
+}
+async function rotateWebhookKey() {
+  if (!confirm('Make a new webhook key? The old URL stops working, so update it in Eventbrite right away.')) return;
+  const { data, error } = await sb.rpc('rotate_eventbrite_webhook_key', { p_tenant: tenantSlug() });
+  if (error) { ebMsg('Could not make a new key: ' + error.message, false); return; }
+  ebConn = data; renderEventbrite();
+  ebMsg('New key ready. Paste the new URL into Eventbrite.', true);
+}
+function copyWebhookUrl(btn) {
+  const u = webhookUrl();
+  if (!u) return;
+  navigator.clipboard.writeText(u).catch(() => {});
+  const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1500);
 }
 
 // ── EVENTS TABLE ──
@@ -892,8 +1010,7 @@ async function logManualSale() {
   const rep = allReps.find(r => r.promo_code === code);
   if (!rep) { err.textContent = `No rep found with code ${code}.`; err.style.display = 'block'; return; }
 
-  const rates = { Legend: 3, Closer: 3, Hotshot: 2.5, 'Rising Star': 2, Recruit: 2 };
-  const rate = rates[rep.rank] || 2;
+  const rate = rateFor(rep.rank);
   const cash = rate * qty;
   const pts = 20 * qty;
 

@@ -1,9 +1,15 @@
-// Supabase Edge Function — eventbrite-webhook
+// Supabase Edge Function: eventbrite-webhook
+//
+// Per-team URL:  .../eventbrite-webhook?tenant=<slug>&key=<team webhook key>
+//   Uses that team's Eventbrite token (Vault) and only credits that team's reps.
+// Legacy URL:    .../eventbrite-webhook?key=<EVENTBRITE_WEBHOOK_SECRET>
+//   SUB:MERGED fallback with the EVENTBRITE_TOKEN secret. Unchanged for the live webhook.
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const EVENTBRITE_TOKEN = Deno.env.get('EVENTBRITE_TOKEN')!;
+const EVENTBRITE_TOKEN = Deno.env.get('EVENTBRITE_TOKEN') || '';
+const WEBHOOK_SECRET = Deno.env.get('EVENTBRITE_WEBHOOK_SECRET') || '';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,24 +26,51 @@ Deno.serve(async (req) => {
   }
 
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  let reqTenant: string | null = null;
+  const log = (row: Parameters<typeof logInbox>[1]) => logInbox(sb, { ...row, tenant_slug: row.tenant_slug ?? reqTenant });
 
   try {
-    if (!EVENTBRITE_TOKEN) {
-      await logInbox(sb, { outcome: 'error', detail: 'EVENTBRITE_TOKEN not configured' });
-      return json({ error: 'EVENTBRITE_TOKEN not configured' }, 500);
+    // ── Auth first, before reading the body ──
+    const url = new URL(req.url);
+    const tenantParam = (url.searchParams.get('tenant') || '').trim().toLowerCase();
+    const key = url.searchParams.get('key') || '';
+    let tenant = 'submerged';
+    let token = '';
+    let payRates: Record<string, number> | null = null;
+
+    if (tenantParam) {
+      if (!/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(tenantParam)) return json({ error: 'unauthorized' }, 401);
+      const { data: ctx, error: ctxErr } = await sb.rpc('webhook_tenant_context', { p_tenant: tenantParam });
+      if (ctxErr) {
+        console.error('webhook_tenant_context failed:', ctxErr.message);
+        return json({ error: 'unauthorized' }, 401);
+      }
+      const teamKeyOk = !!ctx?.webhook_key && safeEqual(key, String(ctx.webhook_key));
+      const legacyOk = tenantParam === 'submerged' && !!WEBHOOK_SECRET && safeEqual(key, WEBHOOK_SECRET);
+      if (!teamKeyOk && !legacyOk) return json({ error: 'unauthorized' }, 401);
+      tenant = tenantParam;
+      token = ctx?.token || (tenant === 'submerged' ? EVENTBRITE_TOKEN : '');
+      payRates = ctx?.pay_rates || null;
+    } else {
+      if (!WEBHOOK_SECRET || !safeEqual(key, WEBHOOK_SECRET)) return json({ error: 'unauthorized' }, 401);
+      const { data: ctx } = await sb.rpc('webhook_tenant_context', { p_tenant: 'submerged' });
+      token = EVENTBRITE_TOKEN;
+      payRates = ctx?.pay_rates || null;
     }
 
-    const body = await req.json();
-    console.log('Webhook received:', JSON.stringify(body));
+    reqTenant = tenant;
 
-    const action = body.config?.action ?? null;
-    const apiUrl = body.api_url;
-
-    // Shared secret: register the webhook URL as .../eventbrite-webhook?key=<WEBHOOK_SECRET>
-    const WEBHOOK_SECRET = Deno.env.get('EVENTBRITE_WEBHOOK_SECRET');
-    if (!WEBHOOK_SECRET || new URL(req.url).searchParams.get('key') !== WEBHOOK_SECRET) {
-      return json({ error: 'unauthorized' }, 401);
+    if (!token) {
+      await log({ outcome: 'error', detail: 'No Eventbrite token saved for this team', tenant_slug: tenant });
+      return json({ skipped: true, reason: 'no_eventbrite_token' }, 200);
     }
+
+    let body: any = null;
+    try { body = await req.json(); } catch (_) { return json({ error: 'invalid json' }, 400); }
+    console.log('Webhook received for team', tenant, JSON.stringify(body));
+
+    const action = body?.config?.action ?? null;
+    const apiUrl = body?.api_url;
 
     // Only ever send the Eventbrite token to Eventbrite's own API.
     let apiHostOk = false;
@@ -46,21 +79,21 @@ Deno.serve(async (req) => {
       apiHostOk = u.protocol === 'https:' && u.hostname === 'www.eventbriteapi.com';
     } catch (_) { apiHostOk = false; }
     if (apiUrl && !apiHostOk) {
-      await logInbox(sb, { action, outcome: 'rejected', detail: 'api_url is not www.eventbriteapi.com' });
+      await log({ action, outcome: 'rejected', detail: 'api_url is not www.eventbriteapi.com' });
       return json({ error: 'invalid api_url' }, 400);
     }
 
     if (action !== 'order.placed' || !apiUrl) {
-      await logInbox(sb, { action, outcome: 'ignored', detail: 'Not order.placed or missing api_url', payload: body });
+      await log({ action, outcome: 'ignored', detail: 'Not order.placed or missing api_url', payload: body });
       return json({ ignored: true, action }, 200);
     }
 
     const orderRes = await fetch(`${apiUrl}?expand=attendees`, {
-      headers: { Authorization: `Bearer ${EVENTBRITE_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!orderRes.ok) {
       const text = await orderRes.text();
-      await logInbox(sb, { action, outcome: 'order_fetch_failed', detail: `${orderRes.status} ${text}`, payload: body });
+      await log({ action, outcome: 'order_fetch_failed', detail: `${orderRes.status} ${text}`, payload: body });
       return json({ error: 'Failed to fetch order', status: orderRes.status }, 502);
     }
     const order = await orderRes.json();
@@ -75,7 +108,7 @@ Deno.serve(async (req) => {
         .eq('source', 'eventbrite')
         .maybeSingle();
       if (existing) {
-        await logInbox(sb, { action, order_id: orderId, event_id: eventbriteEventId, outcome: 'duplicate', payload: body });
+        await log({ action, order_id: orderId, event_id: eventbriteEventId, outcome: 'duplicate', payload: body });
         return json({ success: true, duplicate: true, order_id: orderId }, 200);
       }
     }
@@ -86,7 +119,7 @@ Deno.serve(async (req) => {
     try {
       const discountRes = await fetch(
         `https://www.eventbriteapi.com/v3/orders/${order.id}/?expand=discount,promotional_code`,
-        { headers: { Authorization: `Bearer ${EVENTBRITE_TOKEN}` } },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       if (discountRes.ok) {
         const orderWithDiscount = await discountRes.json();
@@ -121,7 +154,7 @@ Deno.serve(async (req) => {
           try {
             const attRes = await fetch(
               `https://www.eventbriteapi.com/v3/events/${eventbriteEventId}/attendees/${attendee.id}/?expand=promotional_code`,
-              { headers: { Authorization: `Bearer ${EVENTBRITE_TOKEN}` } },
+              { headers: { Authorization: `Bearer ${token}` } },
             );
             if (attRes.ok) {
               const att = await attRes.json();
@@ -155,7 +188,7 @@ Deno.serve(async (req) => {
     }
 
     if (!promoCode) {
-      await logInbox(sb, {
+      await log({
         action, order_id: orderId, event_id: eventbriteEventId,
         outcome: 'no_promo_code',
         detail: 'Order had no discount/promotional_code/attendee promo answer',
@@ -166,23 +199,22 @@ Deno.serve(async (req) => {
 
     const ticketQuantity = order.attendees?.length || 1;
 
-    const { data: rep, error: repError } = await sb
-      .from('reps')
-      .select('*')
-      .eq('promo_code', promoCode)
-      .maybeSingle();
+    // Only this team's reps can be credited.
+    const { data: rep, error: repError } = await applyTenantFilter(
+      sb.from('reps').select('*').eq('promo_code', promoCode),
+      tenant,
+    ).maybeSingle();
 
     if (repError || !rep) {
-      await logInbox(sb, {
+      await log({
         action, order_id: orderId, event_id: eventbriteEventId, promo_code: promoCode,
         outcome: 'rep_not_found',
-        detail: repError?.message || `No rep with promo_code=${promoCode}`,
+        detail: repError?.message || `No ${tenant} rep with promo_code=${promoCode}`,
         payload: body,
       });
       return json({ skipped: true, reason: 'rep_not_found', promo_code: promoCode }, 200);
     }
 
-    const tenant = tenantOf(rep);
 
     let { data: event } = await applyTenantFilter(
       sb.from('events').select('*').eq('eventbrite_id', String(eventbriteEventId)),
@@ -198,7 +230,7 @@ Deno.serve(async (req) => {
     }
 
     if (!event) {
-      await logInbox(sb, {
+      await log({
         action, order_id: orderId, event_id: eventbriteEventId, promo_code: promoCode,
         outcome: 'event_not_found',
         detail: `No events.eventbrite_id=${eventbriteEventId} and no active event fallback`,
@@ -207,7 +239,7 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: 'event_not_found', eventbrite_event_id: eventbriteEventId }, 200);
     }
 
-    const cashRate = getCashRate(rep.rank);
+    const cashRate = getCashRate(rep.rank, payRates);
     const cashEarned = cashRate * ticketQuantity;
     const pointsEarned = 20 * ticketQuantity;
 
@@ -225,7 +257,7 @@ Deno.serve(async (req) => {
         .select()
         .single();
       if (joinErr) {
-        await logInbox(sb, { action, order_id: orderId, promo_code: promoCode, outcome: 'error', detail: joinErr.message });
+        await log({ action, order_id: orderId, promo_code: promoCode, outcome: 'error', detail: joinErr.message });
         return json({ error: joinErr.message }, 500);
       }
       repEvent = newRepEvent;
@@ -258,10 +290,10 @@ Deno.serve(async (req) => {
     });
     if (saleErr) {
       if (String(saleErr.message || '').toLowerCase().includes('duplicate')) {
-        await logInbox(sb, { action, order_id: orderId, promo_code: promoCode, outcome: 'duplicate' });
+        await log({ action, order_id: orderId, promo_code: promoCode, outcome: 'duplicate' });
         return json({ success: true, duplicate: true, order_id: orderId }, 200);
       }
-      await logInbox(sb, { action, order_id: orderId, promo_code: promoCode, outcome: 'error', detail: saleErr.message });
+      await log({ action, order_id: orderId, promo_code: promoCode, outcome: 'error', detail: saleErr.message });
       return json({ error: saleErr.message }, 500);
     }
 
@@ -281,8 +313,8 @@ Deno.serve(async (req) => {
 
     const milestones = [
       { threshold: 10, points: 200, cash: 0, type: 'milestone_10', label: '10-code milestone bonus!' },
-      { threshold: 25, points: 500, cash: 10, type: 'milestone_25', label: '25-code milestone — $10 bonus!' },
-      { threshold: 50, points: 1000, cash: 25, type: 'milestone_50', label: '50-code milestone — $25 bonus!' },
+      { threshold: 25, points: 500, cash: 10, type: 'milestone_25', label: '25-code milestone: $10 bonus!' },
+      { threshold: 50, points: 1000, cash: 25, type: 'milestone_50', label: '50-code milestone: $25 bonus!' },
     ];
 
     // Award every milestone this order crosses (one order can cross 25 AND 50).
@@ -317,7 +349,7 @@ Deno.serve(async (req) => {
       await sb.from('rep_events').update({ cash_earned: runningCash }).eq('id', repEvent.id);
     }
 
-    await logInbox(sb, {
+    await log({
       action, order_id: orderId, event_id: eventbriteEventId, promo_code: promoCode,
       outcome: 'credited',
       detail: `${rep.name}: ${pointsEarned}pts + $${cashEarned}`,
@@ -336,15 +368,19 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('Webhook error:', err);
     try {
-      await logInbox(sb, { outcome: 'error', detail: (err as Error).message });
+      await log({ outcome: 'error', detail: (err as Error).message });
     } catch (_) { /* ignore */ }
     return json({ error: (err as Error).message }, 500);
   }
 });
 
-function tenantOf(rep: { tenant_slug?: string | null } | null | undefined): string {
-  const s = String(rep?.tenant_slug || '').trim().toLowerCase();
-  return s || 'submerged';
+// Constant-time string compare for webhook keys.
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const x = enc.encode(a), y = enc.encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
 }
 
 function applyTenantFilter<T>(query: T, tenant: string): T {
@@ -353,16 +389,12 @@ function applyTenantFilter<T>(query: T, tenant: string): T {
   return q.eq('tenant_slug', tenant);
 }
 
-function getCashRate(rank: string): number {
-  switch (rank) {
-    case 'Legend':
-    case 'Closer':
-      return 3.0;
-    case 'Hotshot':
-      return 2.5;
-    default:
-      return 2.0;
-  }
+// Per-team rates from tenant_settings.pay_rates; SUB:MERGED's original rates as a last resort.
+const DEFAULT_RATES: Record<string, number> = { Recruit: 2.0, 'Rising Star': 2.0, Hotshot: 2.5, Closer: 3.0, Legend: 3.0 };
+function getCashRate(rank: string, rates: Record<string, number> | null): number {
+  const table = rates && typeof rates === 'object' ? rates : DEFAULT_RATES;
+  const r = Number(table[rank] ?? table['Recruit'] ?? DEFAULT_RATES[rank] ?? 2.0);
+  return Number.isFinite(r) && r >= 0 ? r : 2.0;
 }
 
 function json(data: unknown, status: number) {
