@@ -147,6 +147,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <link rel="icon" href="/favicon.ico" sizes="any">
   <script src="/js/tenant.js"></script>
   <script src="/js/tenant-scope.js"></script>
+  <script src="/js/analytics.js"></script>
 </head>
 <body>
 
@@ -192,7 +193,6 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <button class="nav-btn" onclick="showView('content')">Content</button>
         <button class="nav-btn" onclick="showView('payouts')">Payouts</button>
         <button class="nav-btn" onclick="showView('events')">Events</button>
-        <button class="nav-btn" onclick="showView('ai')">AI Coord</button>
       </div>
 
       <!-- ── OVERVIEW ── -->
@@ -269,6 +269,18 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
       <!-- ── REPS ── -->
       <div id="view-reps" class="view">
+        <div class="card" id="invites-card">
+          <div class="card-title">Invite links</div>
+          <div class="section-sub" id="invite-mode" style="margin-bottom:10px;">Loading...</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;">
+            <div><label class="field-label">Label (optional)</label><input class="field-input" id="inv-label" type="text" placeholder="e.g. Fall crew" maxlength="80" /></div>
+            <div><label class="field-label">Max uses</label><input class="field-input" id="inv-max" type="number" min="1" placeholder="Unlimited" /></div>
+            <div><label class="field-label">Expires in days</label><input class="field-input" id="inv-days" type="number" min="1" placeholder="Never" /></div>
+            <div><button class="act-btn act-cyan" style="padding:11px 14px;" onclick="createInvite()">Create link</button></div>
+          </div>
+          <div id="inv-err" style="display:none;margin-top:8px;color:#ef4444;font-size:12px;"></div>
+          <div id="invites-list" style="margin-top:12px;"></div>
+        </div>
         <div class="card">
           <div class="card-title">All reps</div>
           <div style="overflow-x:auto;">
@@ -414,35 +426,6 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         </div>
       </div>
 
-      <!-- ── AI COORDINATOR ── -->
-      <div id="view-ai" class="view">
-        <div class="card" style="margin-bottom:8px;">
-          <div class="card-title">AI street team coordinator</div>
-          <div class="section-sub">Ask anything: payout reports, rep analysis, outreach drafts, social copy</div>
-        </div>
-        <div class="ai-wrap">
-          <div class="ai-history" id="ai-history">
-            <div class="ai-msg">
-              <div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-              <div class="ai-bubble">Admin mode activated. I have full context on your reps, events, and sales. What do you need: payout report, rep analysis, outreach copy, or something else?</div>
-            </div>
-          </div>
-          <div class="ai-footer">
-            <input class="ai-input" id="ai-input" placeholder="e.g. Who are my top 5 reps? Draft a message to idle reps..." onkeydown="if(event.key==='Enter')sendAI()" />
-            <button class="ai-send" id="ai-send" onclick="sendAI()">Send</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Quick prompts</div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Give me a full payout report for all reps on the current active event')">Run payout report for active event</button>
-            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Which reps have not sold any codes or posted any content in the last 7 days? Draft a motivational text message to re-engage them.')">Draft outreach to idle reps</button>
-            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Write 5 Instagram captions for Summer Rave at Musica in Akron OH on July 25th that street team reps can copy and post right now')">Generate social copy pack</button>
-            <button class="act-btn act-cyan" style="text-align:left;padding:10px 14px;border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0;" onclick="fillAI('Analyze my street team performance and tell me who my strongest reps are, who needs motivation, and what I should do this week to maximize ticket sales')">Street team performance analysis</button>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 </div>
@@ -472,6 +455,9 @@ function esc(v) {
 window.addEventListener('load', () => {
   setTimeout(async () => {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    window.sb = sb;
+    if (typeof analyticsReady === 'function') analyticsReady();
+    if (typeof track === 'function') track('app_boot', { page: 'admin' });
     const { data: { session } } = await sb.auth.getSession();
     if (session) { if (await requireAdmin(session.user)) { currentAdmin = session.user; showApp(); } }
     else showScreen('login');
@@ -484,9 +470,11 @@ async function adminLogin() {
   const pass = document.getElementById('admin-pass').value;
   const err = document.getElementById('login-err');
   err.style.display = 'none';
+  if (typeof track === 'function') track('admin_login_start', {});
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
   if (!(await requireAdmin(data.user))) return;
+  if (typeof track === 'function') track('admin_login_success', {});
   currentAdmin = data.user;
   showApp();
 }
@@ -555,6 +543,7 @@ async function loadAllData() {
     if (!repEventMap[row.rep_id].includes(name)) repEventMap[row.rep_id].push(name);
   });
   populateEventSelects();
+  loadInvites();
   loadOverview();
   renderPointsLeaderboard();
   loadRepsTable();
@@ -934,64 +923,72 @@ async function logManualSale() {
   await loadAllData();
 }
 
-// ── AI COORDINATOR ──
-async function sendAI() {
-  const input = document.getElementById('ai-input');
-  const btn = document.getElementById('ai-send');
-  const msg = input.value.trim();
-  if (!msg) return;
-  const history = document.getElementById('ai-history');
-  history.innerHTML += `<div class="ai-msg user-row"><div class="user-bubble">${esc(msg)}</div></div>`;
-  input.value = ''; btn.disabled = true;
-  const tid = 't' + Date.now();
-  history.innerHTML += `<div class="ai-msg" id="${tid}"><div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="ai-bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
-  history.scrollTop = history.scrollHeight;
-
-  const activeEvent = allEvents.find(e => e.status === 'active');
-  const repSummary = allReps.slice(0, 10).map(r => `${r.name} (${r.rank}, ${r.lifetime_points}pts, code:${r.promo_code})`).join('; ');
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are the AI coordinator for the ${(window.AppTenant && AppTenant.name) || 'Woosah'} street team program. Admin context:
-
-ACTIVE EVENT: ${activeEvent ? `${activeEvent.name} at ${activeEvent.venue}, ${activeEvent.city} on ${activeEvent.date}. ${activeEvent.tickets_sold}/${activeEvent.capacity} tickets sold.` : 'No active event'}
-TOTAL REPS: ${allReps.length}
-TOP REPS: ${repSummary}
-
-POINT SYSTEM: 20pts per code, 50pts flyer share, 150pts original content, milestone bonuses at 10/25/50 codes.
-PAY RATES: Recruit/Rising Star $2/code, Hotshot $2.50/code, Closer/Legend $3/code.
-
-You help with: payout reports, rep performance analysis, motivational outreach drafts, social media copy, event strategy. Be direct, energetic, nightlife-appropriate.`,
-        messages: [{ role: 'user', content: msg }]
-      })
-    });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Error. Try again.';
-    document.getElementById(tid).remove();
-    history.innerHTML += `<div class="ai-msg"><div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="ai-bubble" style="white-space:pre-wrap;">${reply}</div></div>`;
-  } catch (e) {
-    document.getElementById(tid).remove();
-    history.innerHTML += `<div class="ai-msg"><div class="ai-av"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0d1b2e" stroke-width="1.8"/><path d="M5 8h6M8 5v6" stroke="#0d1b2e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="ai-bubble">Connection error. Try again.</div></div>`;
-  }
-  btn.disabled = false;
-  history.scrollTop = history.scrollHeight;
+// ── INVITES ──
+function inviteLink(code) {
+  return location.origin + '/' + encodeURIComponent(tenantSlug()) + '?invite=' + encodeURIComponent(code);
 }
-
-function fillAI(txt) {
-  document.getElementById('ai-input').value = txt;
-  document.getElementById('ai-input').focus();
+async function loadInvites() {
+  const mode = document.getElementById('invite-mode');
+  const list = document.getElementById('invites-list');
+  if (!mode || !list) return;
+  const { data: info } = await sb.rpc('tenant_signup_info', { p_tenant: tenantSlug() });
+  mode.textContent = info && info.invite_only
+    ? 'Signup on this team is invite-only. New reps need one of these links.'
+    : 'Signup on this team is open to anyone with the team link. Invite links still work and are tracked.';
+  const { data, error } = await sb.from('tenant_invites').select('*').eq('tenant_slug', tenantSlug()).order('created_at', { ascending: false }).limit(50);
+  if (error) { list.innerHTML = '<div class="empty">Could not load invites.</div>'; return; }
+  if (!data || !data.length) { list.innerHTML = '<div class="empty">No invite links yet.</div>'; return; }
+  const now = Date.now();
+  list.innerHTML = data.map(i => {
+    const expired = i.expires_at && new Date(i.expires_at).getTime() <= now;
+    const used = i.max_uses != null && i.use_count >= i.max_uses;
+    const state = i.revoked_at ? 'Revoked' : expired ? 'Expired' : used ? 'Used up' : 'Active';
+    const uses = i.use_count + ' of ' + (i.max_uses == null ? 'unlimited' : i.max_uses) + ' uses';
+    const exp = i.expires_at ? 'expires ' + new Date(i.expires_at).toLocaleDateString() : 'no expiry';
+    const link = inviteLink(i.code);
+    return `<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="min-width:0;">
+        <div style="font-size:13px;font-weight:600;">${esc(i.label || 'Invite')} <span style="color:var(--muted);font-weight:400;">· ${esc(i.code)} · ${esc(state)}</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(uses)} · ${esc(exp)}</div>
+        <div style="font-size:11px;color:var(--cyan);margin-top:2px;word-break:break-all;">${esc(link)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="act-btn act-cyan" onclick="copyInvite('${esc(i.code)}', this)">Copy link</button>
+        ${state === 'Active' ? `<button class="act-btn act-reject" onclick="revokeInvite('${esc(i.id)}')">Revoke</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function createInvite() {
+  const err = document.getElementById('inv-err');
+  err.style.display = 'none';
+  const label = document.getElementById('inv-label').value.trim() || null;
+  const max = parseInt(document.getElementById('inv-max').value, 10);
+  const days = parseInt(document.getElementById('inv-days').value, 10);
+  const row = { tenant_slug: tenantSlug(), label, max_uses: max > 0 ? max : null,
+    expires_at: days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : null };
+  const { error } = await sb.from('tenant_invites').insert(row);
+  if (error) { err.textContent = 'Could not create the invite: ' + error.message; err.style.display = 'block'; return; }
+  document.getElementById('inv-label').value = '';
+  document.getElementById('inv-max').value = '';
+  document.getElementById('inv-days').value = '';
+  loadInvites();
+}
+async function revokeInvite(id) {
+  if (!confirm('Revoke this invite link? Reps who already joined stay on the team.')) return;
+  await sb.from('tenant_invites').update({ revoked_at: new Date().toISOString() }).eq('id', id).eq('tenant_slug', tenantSlug());
+  loadInvites();
+}
+function copyInvite(code, btn) {
+  navigator.clipboard.writeText(inviteLink(code)).catch(() => {});
+  if (btn) { const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1500); }
 }
 
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + id).classList.add('active');
-  const idx = ['overview', 'reps', 'content', 'payouts', 'events', 'ai'].indexOf(id);
+  const idx = ['overview', 'reps', 'content', 'payouts', 'events'].indexOf(id);
   document.querySelectorAll('.nav-btn')[idx].classList.add('active');
 }
 </script>
