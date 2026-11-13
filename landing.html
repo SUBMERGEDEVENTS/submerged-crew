@@ -3,67 +3,478 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Woosah</title>
+  <title>Woosah | Run your street team without the spreadsheet</title>
+  <meta name="description" content="Your street team, leveled up. Private team portals, automatic sales credit, points, badges and a leaderboard. Invite-only early access." />
+  <link rel="canonical" href="https://woosahcrew.com/" />
+  <meta name="theme-color" content="#0B1727" />
+  <meta name="robots" content="index,follow" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Woosah" />
+  <meta property="og:url" content="https://woosahcrew.com/" />
+  <meta property="og:title" content="Woosah | Run your street team without the spreadsheet" />
+  <meta property="og:description" content="Your street team, leveled up. Private team portals, automatic sales credit, points, badges and a leaderboard. Invite-only early access." />
+  <meta property="og:image" content="https://woosahcrew.com/assets/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="WOOSAH. Run your street team without the spreadsheet. woosahcrew.com. Invite-only early access." />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Woosah | Run your street team without the spreadsheet" />
+  <meta name="twitter:description" content="Your street team, leveled up. Private team portals, automatic sales credit, points, badges and a leaderboard." />
+  <meta name="twitter:image" content="https://woosahcrew.com/assets/og.jpg" />
+
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Barlow:wght@400;600&display=swap" rel="stylesheet" />
+
+  <link rel="preload" href="/assets/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" as="image" href="/assets/poster.jpg" />
+
   <style>
-    :root {
-      --navy: #0d1b2e;
-      --navy2: #0a1525;
-      --text: #e8eef7;
-      --muted: #8b9bb4;
-      --cyan: #00D4C8;
+    @font-face {
+      font-family: Inter;
+      src: url("/assets/fonts/InterVariable.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
     }
+
+    :root {
+      --navy: #0B1727;
+      --navy-2: #0E1D30;
+      --ink: #F4F7FB;
+      --muted: #9AA8BC;
+      --line: rgba(255, 255, 255, 0.10);
+      --cyan: #00D4C8;
+      --cyan-dim: rgba(0, 212, 200, 0.14);
+      --coral: #FF8140;
+      --coral-hover: #FF6A22;
+      --card: rgba(14, 28, 46, 0.72);
+      --radius: 18px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --max: 1120px;
+    }
+
     * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
+    html, body { margin: 0; }
     body {
-      min-height: 100vh;
+      min-height: 100%;
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.55;
+      background:
+        radial-gradient(ellipse 80% 55% at 85% 8%, #0A3D48 0%, transparent 58%),
+        radial-gradient(ellipse 70% 65% at 78% 92%, #1A1650 0%, transparent 58%),
+        var(--navy);
+      background-attachment: fixed;
+    }
+
+    img, video { max-width: 100%; height: auto; display: block; }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+
+    .skip {
+      position: absolute;
+      left: 12px;
+      top: -40px;
+      background: var(--cyan);
+      color: var(--navy);
+      padding: 8px 12px;
+      border-radius: 8px;
+      z-index: 100;
+    }
+    .skip:focus { top: 12px; }
+
+    .wrap {
+      width: min(var(--max), calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    .wordmark {
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .wordmark:hover { text-decoration: none; color: var(--ink); }
+
+    header.site {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+      background: rgba(11, 23, 39, 0.72);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 64px;
+    }
+    .nav .wordmark { font-size: 1.05rem; }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .link-quiet {
+      background: none;
+      border: 0;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.45rem 0.6rem;
+      font-weight: 600;
+      font-size: 0.92rem;
+      white-space: nowrap;
+    }
+    .link-quiet:hover { color: var(--ink); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
       justify-content: center;
-      background: var(--navy);
-      color: var(--text);
-      font-family: Barlow, system-ui, sans-serif;
-      padding: 2rem 1.25rem;
+      gap: 0.4rem;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      text-decoration: none;
+      line-height: 1.1;
+      white-space: nowrap;
     }
-    .wrap { text-align: center; max-width: 28rem; }
-    .wordmark {
-      font-family: "Lilita One", Barlow, sans-serif;
-      font-size: clamp(42px, 10vw, 64px);
-      letter-spacing: 0.04em;
-      margin: 0 0 0.75rem;
+    .btn:hover { text-decoration: none; }
+    .btn-coral {
+      background: var(--coral);
+      color: #0B1727;
     }
-    .tag {
+    .btn-coral:hover { background: var(--coral-hover); }
+    .btn-cyan {
+      background: var(--cyan);
+      color: #0B1727;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.28); }
+    .btn:focus-visible,
+    .link-quiet:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 3px;
+    }
+
+    .team-panel {
+      display: none;
+      border-top: 1px solid var(--line);
+      padding: 0.85rem 0 1rem;
+    }
+    .team-panel.open,
+    .team-panel.auth-needed { display: block; }
+    .team-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: end;
+    }
+    .team-form label {
+      flex: 1 1 16rem;
       margin: 0;
       color: var(--muted);
-      font-size: 16px;
+      font-size: 0.82rem;
       font-weight: 600;
-      letter-spacing: 0.02em;
     }
-    form { margin-top: 1.5rem; display: none; text-align: left; }
-    form.visible { display: block; }
-    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
-    input, button {
-      font: inherit;
+    .team-form input {
       width: 100%;
-      border-radius: 8px;
-      padding: 10px 12px;
+      margin-top: 0.35rem;
+      background: var(--navy-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.65rem 0.75rem;
     }
-    input {
-      background: var(--navy2);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: var(--text);
-      margin-bottom: 10px;
+    .team-form .btn { flex: 0 0 auto; }
+
+    .hero { padding: 2.4rem 0 3.25rem; text-align: center; }
+    .hero h1 {
+      margin: 0 auto 0.85rem;
+      max-width: 18ch;
+      font-size: clamp(2rem, 6.4vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.05;
     }
-    button {
-      background: var(--cyan);
-      border: 0;
-      color: #0a1525;
-      font-weight: 600;
+    .hero h1 em, .section-h em, .feature-copy h2 em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+    .lede {
+      margin: 0 auto 1.4rem;
+      max-width: 32rem;
+      color: var(--muted);
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 500;
+    }
+    .hero-cta { margin-bottom: 2rem; }
+
+    .video-frame {
+      position: relative;
+      border-radius: calc(var(--radius) + 4px);
+      overflow: hidden;
+      background: #070e18;
+      box-shadow: var(--shadow), 0 0 0 1px rgba(0, 212, 200, 0.16);
+      aspect-ratio: 16 / 9;
+    }
+    .video-frame video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #070e18;
+    }
+    .unmute {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      background: rgba(11, 23, 39, 0.82);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 650;
       cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .unmute[hidden] { display: none; }
+
+    .eyebrow {
+      margin: 0 0 0.55rem;
+      color: var(--cyan);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .section-h {
+      margin: 0 0 1.6rem;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      max-width: 16ch;
+    }
+
+    .problem { padding: 1.25rem 0 3.5rem; }
+    .problem-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.2rem 1.2rem;
+      backdrop-filter: blur(10px);
+    }
+    .problem-card .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 129, 64, 0.12);
+      margin-bottom: 0.85rem;
+    }
+    .problem-card h3 {
+      margin: 0 0 0.3rem;
+      font-size: 1.15rem;
+      font-weight: 750;
+    }
+    .problem-card p { margin: 0; color: var(--muted); }
+
+    .features { padding: 0.5rem 0 2rem; }
+    .feature {
+      display: grid;
+      gap: 1.4rem;
+      padding: 2.1rem 0;
+      align-items: center;
+    }
+    .feature + .feature { border-top: 1px solid var(--line); }
+    .feature-copy h2 {
+      margin: 0 0 0.7rem;
+      font-size: clamp(1.45rem, 3.4vw, 2.15rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .feature-copy p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+    .feature-visual {
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .feature-visual img {
+      width: 100%;
+      height: auto;
+    }
+    .feature-visual.shot {
+      background: #140c22;
+      box-shadow: var(--shadow), 0 0 0 1px var(--line);
+    }
+    .feature-visual.shot img { object-fit: cover; }
+    .coming {
+      display: inline-block;
+      margin-top: 0.85rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .cta {
+      padding: 1.5rem 0 4rem;
+    }
+    .cta-card {
+      background: linear-gradient(180deg, rgba(16, 36, 56, 0.9), rgba(10, 22, 38, 0.92));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 1.5rem 1.15rem 1.35rem;
+      box-shadow: var(--shadow);
+    }
+    .cta-card h2 {
+      margin: 0 0 0.45rem;
+      font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .cta-card .intro {
+      margin: 0 0 1.4rem;
+      color: var(--muted);
+      max-width: 36rem;
+    }
+
+    form.demo { display: grid; gap: 0.9rem; }
+    .row {
+      display: grid;
+      gap: 0.9rem;
+    }
+    form.demo label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--muted);
+      margin: 0;
+    }
+    form.demo input,
+    form.demo select,
+    form.demo textarea {
+      width: 100%;
+      margin-top: 0.35rem;
+      background: #0A1522;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.7rem 0.75rem;
+      color: var(--ink);
+    }
+    form.demo textarea { min-height: 6.5rem; resize: vertical; }
+    form.demo .btn { width: 100%; margin-top: 0.25rem; padding: 0.85rem 1.15rem; }
+    .hp {
+      position: absolute;
+      left: -10000px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .form-status {
+      margin: 0.4rem 0 0;
+      min-height: 1.3em;
+      font-weight: 600;
+    }
+    .form-status.ok { color: var(--cyan); }
+    .form-status.err { color: #FF8A7A; }
+    .success-box {
+      display: none;
+      padding: 1.5rem 0.25rem;
+    }
+    .success-box.show { display: block; }
+    .cta-card:has(#demo-success.show) .intro { display: none; }
+    .success-box h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+    .success-box p { margin: 0; color: var(--muted); }
+
+    footer.site {
+      border-top: 1px solid var(--line);
+      padding: 1.6rem 0 2.2rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem 1.4rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    footer .wordmark { font-size: 0.95rem; }
+    footer p { margin: 0; }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--ink); }
+
+    @media (max-width: 520px) {
+      .nav { min-height: 56px; gap: 0.5rem; }
+      .nav .wordmark { font-size: 0.95rem; }
+      .nav-actions { gap: 0.25rem; flex-shrink: 0; }
+      .nav .btn { padding: 0.55rem 0.8rem; font-size: 0.85rem; }
+      .link-quiet { padding: 0.4rem 0.35rem; font-size: 0.8rem; }
+    }
+
+    @media (min-width: 720px) {
+      .problem-grid { grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
+      .row { grid-template-columns: 1fr 1fr; }
+      .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+      .cta-card { padding: 2.2rem 2.2rem 1.9rem; }
+      form.demo .btn { width: auto; justify-self: start; min-width: 12rem; }
+      .hero { padding-top: 3.2rem; }
+    }
+
+    @media (min-width: 900px) {
+      .feature {
+        grid-template-columns: 1fr 1.15fr;
+        gap: 3rem;
+        padding: 2.7rem 0;
+      }
+      .feature.reverse { grid-template-columns: 1.15fr 1fr; }
+      .feature.reverse .feature-copy { order: 2; }
+      .feature.reverse .feature-visual { order: 1; }
     }
   </style>
+
   <script>
     (function () {
       var params = new URLSearchParams(location.search);
@@ -82,29 +493,418 @@
         return;
       }
       document.addEventListener('DOMContentLoaded', function () {
-        var form = document.getElementById('team-form');
-        if (!form) return;
-        form.classList.add('visible');
-        form.addEventListener('submit', function (e) {
-          e.preventDefault();
-          var value = (document.getElementById('team-slug').value || '').trim().toLowerCase();
-          if (!/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(value)) return;
-          try { localStorage.setItem('woosah_tenant', value); } catch (err) {}
-          location.replace('/' + value + location.search + location.hash);
-        });
+        var panel = document.getElementById('team-panel');
+        if (panel) panel.classList.add('auth-needed');
+        var input = document.getElementById('team-slug');
+        if (input) input.focus();
       });
     })();
   </script>
 </head>
 <body>
-  <div class="wrap">
-    <h1 class="wordmark">Woosah</h1>
-    <p class="tag">Invite-only early access. Coming soon.</p>
-    <form id="team-form">
-      <label for="team-slug">Open your team link to finish signing in</label>
-      <input id="team-slug" type="text" autocomplete="off" spellcheck="false" placeholder="your-team" />
-      <button type="submit">Continue</button>
-    </form>
-  </div>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site">
+    <div class="wrap">
+      <div class="nav">
+        <a class="wordmark" href="/">Woosah</a>
+        <div class="nav-actions">
+          <button type="button" class="link-quiet" id="team-toggle" aria-expanded="false" aria-controls="team-panel">Team login</button>
+          <a class="btn btn-coral" href="#demo">Book a demo</a>
+        </div>
+      </div>
+      <div class="team-panel" id="team-panel">
+        <form class="team-form" id="team-form">
+          <label for="team-slug">Open your team link to sign in
+            <input id="team-slug" type="text" autocomplete="off" spellcheck="false" placeholder="your-team" />
+          </label>
+          <button type="submit" class="btn btn-cyan">Continue</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <h1>Run your street team <em>without the spreadsheet.</em></h1>
+        <p class="lede">Your street team, leveled up.</p>
+        <p class="hero-cta"><a class="btn btn-coral" href="#demo">Book a demo</a></p>
+        <div class="video-frame">
+          <video
+            id="hero-video"
+            poster="/assets/poster.jpg"
+            controls
+            playsinline
+            preload="metadata"
+            muted
+            loop
+            width="1280"
+            height="720"
+          >
+            <source src="/assets/hero.webm" type="video/webm" />
+            <source src="/assets/hero.mp4" type="video/mp4" />
+            Your browser does not play video. The promo shows how Woosah runs a street team without a spreadsheet.
+          </video>
+          <button type="button" class="unmute" id="unmute" hidden>Sound on</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="problem" id="problem">
+      <div class="wrap">
+        <p class="eyebrow">The problem</p>
+        <h2 class="section-h">Tracking reps by hand is <em>messy.</em></h2>
+        <div class="problem-grid">
+          <article class="problem-card">
+            <div class="icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M5 16.5V8.8A3.8 3.8 0 0 1 8.8 5h6.4A3.8 3.8 0 0 1 19 8.8v4.4A3.8 3.8 0 0 1 15.2 17H9.2L5 20v-3.5Z" stroke="#FF8140" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M9 10.5h6M9 13.2h3.5" stroke="#FF8140" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3>Codes everywhere</h3>
+            <p>Promo codes buried in texts and DMs</p>
+          </article>
+          <article class="problem-card">
+            <div class="icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="8.2" stroke="#FF8140" stroke-width="1.8"/>
+                <path d="M12 11.2v5" stroke="#FF8140" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="12" cy="8.2" r="1.05" fill="#FF8140"/>
+              </svg>
+            </div>
+            <h3>Who sold what?</h3>
+            <p>Guessing who gets credit for each ticket</p>
+          </article>
+          <article class="problem-card">
+            <div class="icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M5 8 11 14.2 13.6 11.6 19 17" stroke="#FF8140" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15.2 17H19v-3.8" stroke="#FF8140" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3>Reps go quiet</h3>
+            <p>No feedback, no momentum, no motivation</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="wrap">
+        <article class="feature">
+          <div class="feature-copy">
+            <p class="eyebrow">Team portals</p>
+            <h2>Every team gets its own <em>portal.</em></h2>
+            <p>A private team link. Reps sign up, pick their own promo code and agree to your terms.</p>
+          </div>
+          <div class="feature-visual">
+            <img src="/assets/features/portals.webp" width="720" height="1040" alt="Sample team portal signup, with a private team link, promo code field and terms checkbox." />
+          </div>
+        </article>
+
+        <article class="feature reverse">
+          <div class="feature-copy">
+            <p class="eyebrow">Automatic sales credit</p>
+            <h2>Every sale <em>credited.</em> Automatically.</h2>
+            <p>Eventbrite orders that use a rep's promo code land on the right rep.</p>
+          </div>
+          <div class="feature-visual">
+            <img src="/assets/features/sales.webp" width="780" height="980" alt="A ticket order using a rep promo code is credited to that rep, with tickets and points updating automatically." />
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-copy">
+            <p class="eyebrow">Gamification</p>
+            <h2>Points. Tiers. Badges. <em>Bragging rights.</em></h2>
+            <p>Reps earn for the work they put in, then climb the ranks.</p>
+          </div>
+          <div class="feature-visual">
+            <img src="/assets/features/gamification.webp" width="940" height="950" alt="Rep home showing a Rising Star tier, earned badges and a milestone bonus. Sample data." />
+          </div>
+        </article>
+
+        <article class="feature reverse">
+          <div class="feature-copy">
+            <p class="eyebrow">Leaderboard</p>
+            <h2>Competition, <em>without oversharing.</em></h2>
+            <p>Reps see names, promo codes and points. Contact details stay private.</p>
+          </div>
+          <div class="feature-visual shot">
+            <img src="/assets/features/leaderboard.webp" width="1400" height="875" alt="Crew leaderboard showing first names, promo codes and points. Contact details stay private. Sample data." />
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-copy">
+            <p class="eyebrow">Admin dashboard</p>
+            <h2>Every rep, sale and show in <em>one view.</em></h2>
+            <p>See your whole crew, recent signups, which shows each rep joined and every recent sale.</p>
+          </div>
+          <div class="feature-visual shot">
+            <img src="/assets/features/admin.webp" width="1400" height="875" alt="Admin overview of reps, sales and shows in one view. Sample data." />
+          </div>
+        </article>
+
+        <article class="feature reverse">
+          <div class="feature-copy">
+            <p class="eyebrow">Works everywhere</p>
+            <h2>Runs in the browser. <em>Nothing to install.</em></h2>
+            <p>Your team can sign in from a phone or a laptop and get to work.</p>
+            <span class="coming">Rewards store coming soon</span>
+          </div>
+          <div class="feature-visual shot">
+            <img src="/assets/features/rewards.webp" width="1400" height="875" alt="Rewards store marked coming soon, with a preview of crew merch and guest list perks. Sample data." />
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="cta" id="demo">
+      <div class="wrap">
+        <div class="cta-card">
+          <h2>Book a demo</h2>
+          <p class="intro">Invite-only early access. Tell us about your team and we'll be in touch.</p>
+
+          <div class="success-box" id="demo-success" role="status">
+            <h3>Request received</h3>
+            <p>Thanks, we'll be in touch to set up your demo.</p>
+          </div>
+
+          <form class="demo" id="demo-form" novalidate>
+            <div class="hp" aria-hidden="true">
+              <label for="website">Website</label>
+              <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div class="row">
+              <label for="name">Name
+                <input id="name" name="name" type="text" autocomplete="name" maxlength="120" required />
+              </label>
+              <label for="email">Email
+                <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required />
+              </label>
+            </div>
+
+            <label for="org">Organization or team name
+              <input id="org" name="org" type="text" autocomplete="organization" maxlength="160" required />
+            </label>
+
+            <div class="row">
+              <label for="team_size">Team size
+                <select id="team_size" name="team_size" required>
+                  <option value="">Select a range</option>
+                  <option value="1-10">1 to 10</option>
+                  <option value="11-25">11 to 25</option>
+                  <option value="26-50">26 to 50</option>
+                  <option value="51-100">51 to 100</option>
+                  <option value="100+">100 or more</option>
+                </select>
+              </label>
+              <label for="ticketing">How do you sell tickets?
+                <select id="ticketing" name="ticketing" required>
+                  <option value="">Select one</option>
+                  <option value="eventbrite">Eventbrite</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+            </div>
+
+            <label for="message">Anything we should know? (optional)
+              <textarea id="message" name="message" maxlength="2000" rows="4"></textarea>
+            </label>
+
+            <button type="submit" class="btn btn-coral" id="demo-submit">Book a demo</button>
+            <p class="form-status" id="demo-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap foot">
+      <a class="wordmark" href="/">Woosah</a>
+      <p>Invite-only early access.</p>
+      <a href="/terms">Terms of Use</a>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var SUPABASE_URL = "https://khisgmozkufnzapmldgc.supabase.co";
+      var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c";
+
+      function onReady(fn) {
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+        else fn();
+      }
+
+      onReady(function () {
+        var toggle = document.getElementById('team-toggle');
+        var panel = document.getElementById('team-panel');
+        var teamForm = document.getElementById('team-form');
+        var slugInput = document.getElementById('team-slug');
+
+        if (toggle && panel) {
+          toggle.addEventListener('click', function () {
+            var open = !panel.classList.contains('open');
+            panel.classList.toggle('open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open && slugInput) slugInput.focus();
+          });
+        }
+
+        if (teamForm) {
+          teamForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var value = ((slugInput && slugInput.value) || '').trim().toLowerCase();
+            if (!/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(value)) {
+              if (slugInput) slugInput.focus();
+              return;
+            }
+            try { localStorage.setItem('woosah_tenant', value); } catch (err) {}
+            location.assign('/' + value + location.search + location.hash);
+          });
+        }
+
+        var video = document.getElementById('hero-video');
+        var unmute = document.getElementById('unmute');
+        var reduceMotion = false;
+        try {
+          reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        } catch (err) {}
+
+        function syncUnmute() {
+          if (!unmute || !video) return;
+          unmute.hidden = !video.muted;
+          unmute.textContent = video.muted ? 'Sound on' : 'Sound off';
+        }
+
+        if (video) {
+          if (!reduceMotion) {
+            var play = video.play();
+            if (play && play.catch) play.catch(function () {});
+          }
+          if (unmute) {
+            unmute.hidden = false;
+            unmute.addEventListener('click', function () {
+              video.muted = !video.muted;
+              if (!video.muted) {
+                var p = video.play();
+                if (p && p.catch) p.catch(function () {});
+              }
+              syncUnmute();
+            });
+            video.addEventListener('volumechange', syncUnmute);
+            syncUnmute();
+          }
+        }
+
+        var form = document.getElementById('demo-form');
+        var statusEl = document.getElementById('demo-status');
+        var submitBtn = document.getElementById('demo-submit');
+        var successBox = document.getElementById('demo-success');
+        var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        var teamSizes = { '1-10': 1, '11-25': 1, '26-50': 1, '51-100': 1, '100+': 1 };
+        var ticketVals = { eventbrite: 1, other: 1 };
+
+        function setStatus(kind, text) {
+          if (!statusEl) return;
+          statusEl.className = 'form-status' + (kind ? ' ' + kind : '');
+          statusEl.textContent = text || '';
+        }
+
+        if (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            setStatus('', '');
+
+            var honeypot = (document.getElementById('website') || {}).value || '';
+            if (String(honeypot).trim()) {
+              form.style.display = 'none';
+              if (successBox) successBox.classList.add('show');
+              return;
+            }
+
+            var name = (document.getElementById('name').value || '').trim();
+            var email = (document.getElementById('email').value || '').trim();
+            var org = (document.getElementById('org').value || '').trim();
+            var teamSize = document.getElementById('team_size').value || '';
+            var ticketing = document.getElementById('ticketing').value || '';
+            var message = (document.getElementById('message').value || '').trim();
+
+            if (name.length < 1 || name.length > 120) {
+              setStatus('err', 'Please enter your name.');
+              document.getElementById('name').focus();
+              return;
+            }
+            if (!emailRe.test(email) || email.length > 254) {
+              setStatus('err', 'Please enter a valid email address.');
+              document.getElementById('email').focus();
+              return;
+            }
+            if (org.length < 1 || org.length > 160) {
+              setStatus('err', 'Please enter your organization or team name.');
+              document.getElementById('org').focus();
+              return;
+            }
+            if (!teamSizes[teamSize]) {
+              setStatus('err', 'Please choose a team size.');
+              document.getElementById('team_size').focus();
+              return;
+            }
+            if (!ticketVals[ticketing]) {
+              setStatus('err', 'Please tell us how you sell tickets.');
+              document.getElementById('ticketing').focus();
+              return;
+            }
+            if (message.length > 2000) {
+              setStatus('err', 'Please keep your message under 2,000 characters.');
+              document.getElementById('message').focus();
+              return;
+            }
+
+            var payload = {
+              name: name,
+              email: email,
+              org: org,
+              team_size: teamSize,
+              ticketing: ticketing,
+              user_agent: String(navigator.userAgent || '').slice(0, 512)
+            };
+            if (message) payload.message = message;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            fetch(SUPABASE_URL + '/rest/v1/demo_requests', {
+              method: 'POST',
+              headers: {
+                apikey: SUPABASE_ANON,
+                Authorization: 'Bearer ' + SUPABASE_ANON,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal'
+              },
+              body: JSON.stringify(payload)
+            }).then(function (res) {
+              if (!res.ok) throw new Error('request-failed');
+              form.style.display = 'none';
+              if (successBox) {
+                successBox.classList.add('show');
+                successBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              }
+            }).catch(function () {
+              setStatus('err', 'Something went wrong. Please try again in a moment.');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Book a demo';
+            });
+          });
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
