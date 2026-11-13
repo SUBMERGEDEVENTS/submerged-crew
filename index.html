@@ -24,7 +24,7 @@
       loadScript(cdn2,
         function(){ console.log('Supabase loaded from unpkg'); },
         function(){ 
-          console.error('Both CDNs failed — check network connection');
+          console.error('Both CDNs failed. Check network connection.');
           document.getElementById('screen-loading').innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:2rem;text-align:center;"><div style=\'font-size:32px;\'>⚠️</div><div style=\'font-family:sans-serif;color:#fff;font-size:16px;\'>Could not load required libraries.<br>Please check your connection and refresh.</div><button onclick=\'location.reload()\' style=\'margin-top:16px;padding:12px 24px;background:#00D4C8;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;\'>Retry</button></div>';
         }
       );
@@ -251,6 +251,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <link rel="icon" href="/favicon.ico" sizes="any">
   <script src="/js/tenant.js"></script>
   <script src="/js/tenant-scope.js"></script>
+  <script src="/js/analytics.js"></script>
 </head>
 <body>
 
@@ -344,6 +345,11 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <label class="field-label">Your promo code</label>
         <input class="field-input" id="signup-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
         <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
+        <div id="signup-invite-wrap" style="display:none;">
+          <label class="field-label">Invite code</label>
+          <input class="field-input" id="signup-invite" type="text" placeholder="From your team's invite link" maxlength="32" style="text-transform:uppercase;" />
+          <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">This team is invite-only. Ask your coordinator for an invite link.</div>
+        </div>
         <label style="display:flex;gap:10px;align-items:flex-start;margin:4px 0 8px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.45;">
           <input id="signup-tos" type="checkbox" style="margin-top:3px;accent-color:var(--cyan);flex-shrink:0;" />
           <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--cyan);font-weight:600;">Woosah Terms of Use</a> (includes confidentiality and IP rules).</span>
@@ -351,6 +357,27 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create account</button>
         <div class="auth-error" id="signup-error"></div>
         <div class="auth-success" id="signup-success"></div>
+      </div>
+
+      <!-- FINISH PROFILE: shown after Spotify/Apple sign-in, or for an account with no profile on this team -->
+      <div id="finish-profile-panel" style="display:none;">
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:0.5rem;">Finish your profile</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.45;">You're signed in as <span id="finish-email" style="color:var(--text);"></span>. Pick your promo code to join this team.</div>
+        <label class="field-label">Your promo code</label>
+        <input class="field-input" id="finish-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
+        <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
+        <div id="finish-invite-wrap" style="display:none;">
+          <label class="field-label">Invite code</label>
+          <input class="field-input" id="finish-invite" type="text" placeholder="From your team's invite link" maxlength="32" style="text-transform:uppercase;" />
+          <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">This team is invite-only. Ask your coordinator for an invite link.</div>
+        </div>
+        <label style="display:flex;gap:10px;align-items:flex-start;margin:4px 0 8px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.45;">
+          <input id="finish-tos" type="checkbox" style="margin-top:3px;accent-color:var(--cyan);flex-shrink:0;" />
+          <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--cyan);font-weight:600;">Woosah Terms of Use</a> (includes confidentiality and IP rules).</span>
+        </label>
+        <button class="auth-btn" id="finish-btn" onclick="finishProfile()">Join the team</button>
+        <div class="auth-error" id="finish-error"></div>
+        <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;"><span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="doLogout()">Use a different account</span></div>
       </div>
 
     </div>
@@ -378,7 +405,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <button class="nav-btn" onclick="showView('events')">Events</button>
         <button class="nav-btn" onclick="showView('leaderboard')">Rankings</button>
         <button class="nav-btn" onclick="showView('submit')">Submit</button>
-        <button class="nav-btn" onclick="showView('music')">Mix</button>
+        <button class="nav-btn" id="nav-music" style="display:none;" onclick="showView('music')">Mix</button>
         <button class="nav-btn" onclick="showView('rewards')">Rewards</button>
       </div>
 
@@ -630,8 +657,73 @@ function initSupabase() {
     return;
   }
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  window.sb = sb;
   console.log('Supabase client initialized');
+  if (typeof analyticsReady === 'function') analyticsReady();
+  if (typeof track === 'function') track('app_boot', { page: 'portal' });
+  captureInviteFromUrl();
+  applyFeatureFlags();
   boot();
+}
+
+// ── Feature flags ──
+// The Mix tab is a SUB:MERGED-only preview (no real music data yet).
+function mixEnabled() {
+  const flags = (window.AppTenant && AppTenant.featureFlags) || {};
+  return TENANT_SLUG === 'submerged' && flags.musicMix !== false;
+}
+function applyFeatureFlags() {
+  const btn = document.getElementById('nav-music');
+  if (btn) btn.style.display = mixEnabled() ? '' : 'none';
+}
+document.addEventListener('tenantready', applyFeatureFlags);
+
+// ── Invites ──
+function inviteKey() { return 'woosah_invite_' + (TENANT_SLUG || ''); }
+function captureInviteFromUrl() {
+  try {
+    const code = new URLSearchParams(location.search).get('invite');
+    if (code) localStorage.setItem(inviteKey(), code.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+  } catch (_) { /* ignore */ }
+}
+function storedInvite() {
+  try { return localStorage.getItem(inviteKey()) || ''; } catch (_) { return ''; }
+}
+let signupInfo = null;
+async function getSignupInfo() {
+  if (signupInfo) return signupInfo;
+  try {
+    const { data, error } = await sb.rpc('tenant_signup_info', { p_tenant: TENANT_SLUG });
+    signupInfo = (!error && data) ? data : { invite_only: TENANT_SLUG !== 'submerged' };
+  } catch (_) { signupInfo = { invite_only: TENANT_SLUG !== 'submerged' }; }
+  return signupInfo;
+}
+async function refreshInviteFields() {
+  const info = await getSignupInfo();
+  const code = storedInvite();
+  [['signup-invite-wrap','signup-invite'],['finish-invite-wrap','finish-invite']].forEach(([wrap, input]) => {
+    const w = document.getElementById(wrap), i = document.getElementById(input);
+    if (w) w.style.display = info.invite_only ? 'block' : 'none';
+    if (i && code && !i.value) i.value = code;
+  });
+}
+// Returns { ok, invite } or { error }
+async function checkInviteFor(inputId) {
+  const info = await getSignupInfo();
+  if (!info.invite_only) return { ok: true, invite: null };
+  const invite = (document.getElementById(inputId).value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!invite) return { error: 'This team is invite-only. Enter the invite code from your invite link.' };
+  const { data, error } = await sb.rpc('check_invite', { p_tenant: TENANT_SLUG, p_code: invite });
+  if (error || data !== true) return { error: 'That invite code is not valid for this team, or it has expired.' };
+  return { ok: true, invite };
+}
+function friendlyRepError(e) {
+  const m = (e && (e.message || '')) || '';
+  if (m.includes('promo_code')) return 'That promo code is already taken. Try another.';
+  if (m.includes('invite_required')) return 'This team is invite-only. Enter the invite code from your invite link.';
+  if (m.includes('invite_invalid')) return 'That invite code is not valid for this team, or it has expired.';
+  if (m.includes('terms_not_accepted')) return 'Please agree to the Woosah Terms of Use to continue.';
+  return m || 'Something went wrong. Try again.';
 }
 
 let currentUser = null;
@@ -647,11 +739,11 @@ async function boot() {
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
-      await loadRep();
+      if (!(await loadRep())) return;
       showScreen('app');
       if (currentRep) initMusicState();
       const pending = sessionStorage.getItem('pendingMusicConnect');
-      if (pending) { sessionStorage.removeItem('pendingMusicConnect'); setTimeout(()=>{ showView('music'); connectMusic(pending); }, 600); }
+      if (pending) { sessionStorage.removeItem('pendingMusicConnect'); if (mixEnabled()) setTimeout(()=>{ showView('music'); connectMusic(pending); }, 600); }
     } else {
       // Check URL for OAuth error params
       const params = new URLSearchParams(window.location.search);
@@ -674,17 +766,26 @@ async function boot() {
 // ══════════════════════════════════════════════════════
 // AUTH — social login panel navigation
 // ══════════════════════════════════════════════════════
+function hideAuthPanels() {
+  ['social-login-panel','email-login-panel','email-signup-panel','finish-profile-panel'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+}
 function showSocialLogin() {
+  hideAuthPanels();
   document.getElementById('social-login-panel').style.display = 'block';
   document.getElementById('email-login-panel').style.display = 'none';
   document.getElementById('email-signup-panel').style.display = 'none';
 }
 function showEmailLogin() {
+  hideAuthPanels();
   document.getElementById('social-login-panel').style.display = 'none';
   document.getElementById('email-login-panel').style.display = 'block';
   document.getElementById('email-signup-panel').style.display = 'none';
 }
 function showEmailSignup() {
+  hideAuthPanels();
+  refreshInviteFields();
   document.getElementById('social-login-panel').style.display = 'none';
   document.getElementById('email-login-panel').style.display = 'none';
   document.getElementById('email-signup-panel').style.display = 'block';
@@ -712,6 +813,7 @@ async function socialLogin(service) {
     return;
   }
 
+  if (typeof track === 'function') track('login_start', { method: service });
   const providerMap = { spotify: 'spotify', apple: 'apple' };
   const provider = providerMap[service];
 
@@ -736,16 +838,19 @@ async function doLogin() {
   const err = document.getElementById('login-error');
   err.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Signing in...';
+  if (typeof track === 'function') track('login_start', { method: 'email' });
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) {
+    if (typeof track === 'function') track('login_error', { method: 'email' });
     err.textContent = error.message; err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Sign In';
     return;
   }
+  if (typeof track === 'function') track('login_success', { method: 'email' });
   currentUser = data.user;
-  await loadRep();
-  showScreen('app');
   btn.disabled = false; btn.textContent = 'Sign In';
+  if (!(await loadRep())) return;
+  showScreen('app');
 }
 
 async function doSignup() {
@@ -768,11 +873,18 @@ async function doSignup() {
   }
   const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (code.length < 3 || code.length > 16) {
-    err.textContent = 'Promo code must be 3–16 letters/numbers (no spaces).';
+    err.textContent = 'Promo code must be 3 to 16 letters or numbers (no spaces).';
     err.style.display = 'block';
     return;
   }
   btn.disabled = true; btn.textContent = 'Creating account...';
+  if (typeof track === 'function') track('signup_start', {});
+  const inv = await checkInviteFor('signup-invite');
+  if (inv.error) {
+    err.textContent = inv.error; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Create account';
+    return;
+  }
   const available = await isPromoAvailable(code);
   if (available === false) {
     err.textContent = 'That promo code is already taken. Try another.';
@@ -794,18 +906,21 @@ async function doSignup() {
     instagram: ig || null,
     promo_code: code,
     rank: 'Recruit',
-    lifetime_points: 0
+    lifetime_points: 0,
+    terms_accepted_at: new Date().toISOString(),
+    invite_code: inv.invite
   }));
   if (repErr) {
-    err.textContent = repErr.message.includes('promo_code') ? 'That promo code is already taken. Try another.' : repErr.message;
+    err.textContent = friendlyRepError(repErr);
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Create account';
     return;
   }
+  if (typeof track === 'function') track('signup_success', {});
   currentUser = data.user;
-  await loadRep();
-  showScreen('app');
   btn.disabled = false; btn.textContent = 'Create account';
+  if (!(await loadRep())) return;
+  showScreen('app');
 }
 
 
@@ -825,7 +940,7 @@ function normalizePromo(raw) {
 
 async function savePromoCode(raw) {
   const code = normalizePromo(raw);
-  if (code.length < 3 || code.length > 16) return { error: 'Promo code must be 3–16 letters/numbers.' };
+  if (code.length < 3 || code.length > 16) return { error: 'Promo code must be 3 to 16 letters or numbers.' };
   if (!currentRep) return { error: 'Not signed in as a rep.' };
   if (code === currentRep.promo_code) return { error: null };
   const available = await isPromoAvailable(code);
@@ -857,51 +972,85 @@ async function doLogout() {
   await sb.auth.signOut();
   currentUser = null; currentRep = null;
   showScreen('login');
+  showSocialLogin();
 }
 
 // ══════════════════════════════════════════════════════
 // LOAD REP DATA
 // ══════════════════════════════════════════════════════
+// Returns true when this user has a rep profile on THIS team. Otherwise shows
+// the Finish profile panel (promo code + terms + invite where required) and
+// returns false. No profile is created without those steps, including after
+// Spotify or Apple sign-in.
 async function loadRep() {
-  const { data } = await sb.from('reps').select('*').eq('user_id', currentUser.id).single();
+  const { data } = await scope(sb.from('reps').select('*').eq('user_id', currentUser.id))
+    .order('created_at', { ascending: true }).limit(1).maybeSingle();
   currentRep = data;
-
-  // No rep profile yet — auto-create from OAuth metadata (Spotify login)
   if (!currentRep) {
-    const meta = currentUser.user_metadata || {};
-    // Pull name from Spotify metadata — falls back to email username
-    const fullName = meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'New Rep';
-    const parts = fullName.trim().split(' ');
-    const first = parts[0] || 'Rep';
-    const last = parts[1] || '';
-
-    // Auto-generate promo code: first 4 letters + 2 random digits
-    const base = (first.substring(0,4) + Math.floor(10+Math.random()*89)).toUpperCase().replace(/[^A-Z0-9]/g,'');
-
-    // Auto-connect Spotify since they just logged in with it
-    const { data: newRep, error } = await sb.from('reps').insert(stamped({
-      user_id: currentUser.id,
-      name: fullName,
-      email: currentUser.email || '',
-      promo_code: base,
-      rank: 'Recruit',
-      lifetime_points: 0,
-      spotify_connected: true
-    })).select().single();
-
-    if (error) {
-      console.error('Failed to create rep profile:', error);
-      showScreen('login');
-      return;
-    }
-    currentRep = newRep;
-
-    // Auto-connect Spotify in music state
-    musicConnected['spotify'] = true;
+    showFinishProfile();
+    return false;
   }
-
   renderHeader();
   await Promise.all([loadStats(), loadEvents()]);
+  return true;
+}
+
+function suggestPromo() {
+  const meta = (currentUser && currentUser.user_metadata) || {};
+  const fullName = meta.full_name || meta.name || (currentUser && currentUser.email ? currentUser.email.split('@')[0] : '') || 'Rep';
+  return (fullName.trim().split(' ')[0].substring(0, 4) + Math.floor(10 + Math.random() * 89)).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function showFinishProfile() {
+  showScreen('login');
+  hideAuthPanels();
+  document.getElementById('finish-profile-panel').style.display = 'block';
+  document.getElementById('finish-email').textContent = (currentUser && currentUser.email) || 'your account';
+  const codeEl = document.getElementById('finish-code');
+  if (codeEl && !codeEl.value) codeEl.value = suggestPromo();
+  document.getElementById('finish-tos').checked = false;
+  refreshInviteFields();
+}
+
+async function finishProfile() {
+  const btn = document.getElementById('finish-btn');
+  const err = document.getElementById('finish-error');
+  err.style.display = 'none';
+  if (!currentUser) { showSocialLogin(); return; }
+  const code = normalizePromo(document.getElementById('finish-code').value);
+  if (code.length < 3 || code.length > 16) {
+    err.textContent = 'Promo code must be 3 to 16 letters or numbers (no spaces).'; err.style.display = 'block'; return;
+  }
+  if (!document.getElementById('finish-tos').checked) {
+    err.textContent = 'Please agree to the Woosah Terms of Use to continue.'; err.style.display = 'block'; return;
+  }
+  btn.disabled = true; btn.textContent = 'Joining...';
+  const inv = await checkInviteFor('finish-invite');
+  if (inv.error) { err.textContent = inv.error; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Join the team'; return; }
+  const available = await isPromoAvailable(code);
+  if (available === false) { err.textContent = 'That promo code is already taken. Try another.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Join the team'; return; }
+  const meta = currentUser.user_metadata || {};
+  const provider = (currentUser.app_metadata && currentUser.app_metadata.provider) || '';
+  const fullName = meta.full_name || meta.name || (currentUser.email ? currentUser.email.split('@')[0] : '') || 'New Rep';
+  const { error } = await sb.from('reps').insert(stamped({
+    user_id: currentUser.id,
+    name: fullName,
+    email: currentUser.email || '',
+    promo_code: code,
+    rank: 'Recruit',
+    lifetime_points: 0,
+    spotify_connected: provider === 'spotify',
+    apple_connected: provider === 'apple',
+    terms_accepted_at: new Date().toISOString(),
+    invite_code: inv.invite
+  }));
+  btn.disabled = false; btn.textContent = 'Join the team';
+  if (error) { err.textContent = friendlyRepError(error); err.style.display = 'block'; return; }
+  if (typeof track === 'function') track('signup_success', { method: provider || 'email' });
+  if (provider === 'spotify' || provider === 'apple') musicConnected[provider] = true;
+  if (!(await loadRep())) return;
+  showScreen('app');
+  initMusicState();
 }
 
 function renderHeader() {
@@ -1132,6 +1281,7 @@ async function joinEvent(eventId, btn) {
   btn.disabled = true; btn.textContent = 'Joining...';
   const { error } = await sb.from('rep_events').insert(stamped({ rep_id: currentRep.id, event_id: eventId }));
   if (!error) {
+    if (typeof track === 'function') track('join_event', { event_id: eventId });
     btn.textContent = '✓ Active';
     btn.closest('.event-card').classList.add('joined');
     const banner = btn.closest('.event-card').querySelector('.event-banner');
@@ -1168,6 +1318,7 @@ async function loadLeaderboard() {
   document.getElementById('lb-event-title').textContent = eventId ? `${evName} · Show rankings` : 'Crew leaderboard · All shows';
   document.getElementById('lb-sub').textContent = eventId ? 'Points from tickets sold for this show' : 'Top reps by points across all shows';
   const { data, error } = await sb.rpc('gamification_leaderboard', { p_event_id: eventId, p_limit: 25, p_tenant: TENANT_SLUG });
+  if (error && error.code === '42501') { list.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>Rankings are only visible to this team.</div>'; return; }
   if (error) { console.warn('leaderboard RPC failed, falling back', error); return renderLeaderboardLegacy(allEvents); }
   if (!data || data.length === 0) { list.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>No reps on this board yet. Be the first!</div>'; return; }
   const rankNums = { 1: 'r1', 2: 'r2', 3: 'r3' };
@@ -1347,6 +1498,8 @@ function showScreen(id) {
 }
 
 function showView(id) {
+  if (id === 'music' && !mixEnabled()) id = 'home';
+  if (typeof track === 'function') track('view_change', { view: id });
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');

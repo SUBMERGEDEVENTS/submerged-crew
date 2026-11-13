@@ -11,7 +11,7 @@
   "featureFlags": {
     "socialLogin": true,
     "musicMix": true,
-    "adminAi": true,
+    "adminAi": false,
     "leaderboard": true
   },
   "copy": {
