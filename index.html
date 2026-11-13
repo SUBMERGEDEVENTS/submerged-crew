@@ -1189,10 +1189,10 @@ function renderRankCard() {
   const pts = currentRep.lifetime_points;
   const tiers = [
     {name:'Recruit',icon:'🎫',color:'var(--muted)',min:0,max:400,sub:'Sell codes to level up to Rising Star',prog:Math.min(100,Math.round((pts/400)*100))},
-    {name:'Rising Star',icon:'🌟',color:'#22c55e',min:400,max:1000,sub:'Keep going: Hotshot unlocks $2.50/code',prog:Math.min(100,Math.round(((pts-400)/600)*100))},
-    {name:'Hotshot',icon:'⚡',color:'#a78bfa',min:1000,max:2500,sub:'Reach Closer for $3/code + cash bonuses',prog:Math.min(100,Math.round(((pts-1000)/1500)*100))},
+    {name:'Rising Star',icon:'🌟',color:'#22c55e',min:400,max:1000,sub:'Keep going to reach Hotshot',prog:Math.min(100,Math.round(((pts-400)/600)*100))},
+    {name:'Hotshot',icon:'⚡',color:'#a78bfa',min:1000,max:2500,sub:'Reach Closer for a higher rate + cash bonuses',prog:Math.min(100,Math.round(((pts-1000)/1500)*100))},
     {name:'Closer',icon:'🔥',color:'#00D4C8',min:2500,max:5000,sub:'Almost at Legend: the top of the team',prog:Math.min(100,Math.round(((pts-2500)/2500)*100))},
-    {name:'Legend',icon:'👑',color:'#f0b429',min:5000,max:5000,sub:'Top tier: $3/code + VIP guest list',prog:100},
+    {name:'Legend',icon:'👑',color:'#f0b429',min:5000,max:5000,sub:'Top tier: best rate + VIP guest list',prog:100},
   ];
   const tier = tiers.find(t=>t.name===rank) || tiers[0];
   document.getElementById('rank-icon').textContent = tier.icon;
@@ -1203,8 +1203,23 @@ function renderRankCard() {
   document.getElementById('rank-prog').style.width = tier.prog + '%';
   document.getElementById('rank-prog').style.background = tier.color;
   document.getElementById('my-code').textContent = currentRep.promo_code;
-  const rates = {'Legend':'$3.00','Closer':'$3.00','Hotshot':'$2.50'};
-  document.getElementById('rate-label').textContent = (rates[rank]||'$2.00') + ' / code at ' + rank + ' rank';
+  renderRateLabel(rank);
+}
+
+// Team pay rates come from the server (tenant_pay_rates).
+let teamRates = null;
+async function renderRateLabel(rank) {
+  const el = document.getElementById('rate-label');
+  if (!el) return;
+  if (!teamRates) {
+    try {
+      const { data, error } = await sb.rpc('tenant_pay_rates', { p_tenant: TENANT_SLUG });
+      if (!error && data) teamRates = data;
+    } catch (_) { /* ignore */ }
+  }
+  if (!teamRates) { el.textContent = rank + ' rank'; return; }
+  const r = Number(teamRates[rank] ?? teamRates.Recruit ?? 0);
+  el.textContent = '$' + r.toFixed(2) + ' / code at ' + rank + ' rank';
 }
 
 async function renderActivityFeed() {
