@@ -182,19 +182,18 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: 'rep_not_found', promo_code: promoCode }, 200);
     }
 
-    let { data: event } = await sb
-      .from('events')
-      .select('*')
-      .eq('eventbrite_id', String(eventbriteEventId))
-      .maybeSingle();
+    const tenant = tenantOf(rep);
+
+    let { data: event } = await applyTenantFilter(
+      sb.from('events').select('*').eq('eventbrite_id', String(eventbriteEventId)),
+      tenant,
+    ).maybeSingle();
 
     if (!event) {
-      const { data: activeEvents } = await sb
-        .from('events')
-        .select('*')
-        .eq('status', 'active')
-        .order('date', { ascending: true })
-        .limit(1);
+      const { data: activeEvents } = await applyTenantFilter(
+        sb.from('events').select('*').eq('status', 'active').order('date', { ascending: true }).limit(1),
+        tenant,
+      );
       event = activeEvents?.[0] || null;
     }
 
@@ -222,7 +221,7 @@ Deno.serve(async (req) => {
     if (!repEvent) {
       const { data: newRepEvent, error: joinErr } = await sb
         .from('rep_events')
-        .insert({ rep_id: rep.id, event_id: event.id, codes_sold: 0, points_earned: 0, cash_earned: 0 })
+        .insert({ rep_id: rep.id, event_id: event.id, codes_sold: 0, points_earned: 0, cash_earned: 0, tenant_slug: tenant })
         .select()
         .single();
       if (joinErr) {
@@ -255,6 +254,7 @@ Deno.serve(async (req) => {
       points_awarded: pointsEarned,
       cash_awarded: cashEarned,
       source: 'eventbrite',
+      tenant_slug: tenant,
     });
     if (saleErr) {
       if (String(saleErr.message || '').toLowerCase().includes('duplicate')) {
@@ -272,6 +272,7 @@ Deno.serve(async (req) => {
       points: pointsEarned,
       cash: cashEarned,
       description: `${ticketQuantity} ticket(s) sold via code ${promoCode}`,
+      tenant_slug: tenant,
     });
 
     await sb.from('events').update({
@@ -299,7 +300,7 @@ Deno.serve(async (req) => {
           .limit(1);
         if (already && already.length > 0) continue;
         const { error: msErr } = await sb.from('points_log').insert({
-          rep_id: rep.id, event_id: event.id, type: m.type, points: m.points, cash: m.cash, description: m.label,
+          rep_id: rep.id, event_id: event.id, type: m.type, points: m.points, cash: m.cash, description: m.label, tenant_slug: tenant,
         });
         if (msErr) {
           console.error(`milestone ${m.type} insert failed:`, msErr.message);
@@ -321,6 +322,7 @@ Deno.serve(async (req) => {
       outcome: 'credited',
       detail: `${rep.name}: ${pointsEarned}pts + $${cashEarned}`,
       payload: { order_id: orderId, rep: rep.name, tickets: ticketQuantity },
+      tenant_slug: tenant,
     });
 
     return json({
@@ -339,6 +341,17 @@ Deno.serve(async (req) => {
     return json({ error: (err as Error).message }, 500);
   }
 });
+
+function tenantOf(rep: { tenant_slug?: string | null } | null | undefined): string {
+  const s = String(rep?.tenant_slug || '').trim().toLowerCase();
+  return s || 'submerged';
+}
+
+function applyTenantFilter<T>(query: T, tenant: string): T {
+  const q = query as T & { or: (v: string) => T; eq: (c: string, v: string) => T };
+  if (tenant === 'submerged') return q.or('tenant_slug.eq.submerged,tenant_slug.is.null');
+  return q.eq('tenant_slug', tenant);
+}
 
 function getCashRate(rank: string): number {
   switch (rank) {
@@ -367,6 +380,7 @@ async function logInbox(sb: SupabaseClient, row: {
   outcome: string;
   detail?: string | null;
   payload?: unknown;
+  tenant_slug?: string | null;
 }) {
   const { error } = await sb.from('webhook_inbox').insert({
     source: 'eventbrite',
@@ -377,6 +391,7 @@ async function logInbox(sb: SupabaseClient, row: {
     outcome: row.outcome,
     detail: row.detail ?? null,
     payload: row.payload ?? null,
+    tenant_slug: row.tenant_slug ?? null,
   });
   if (error) console.error('webhook_inbox insert failed:', error.message);
 }

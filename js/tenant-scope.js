@@ -5,8 +5,8 @@
  * tenant "submerged", which is how the app treated all data before a
  * tenant column existed. Other tenants never match NULL rows.
  *
- * Requires the proposed tenant_slug migration (not applied). Queries
- * that filter on tenant_slug will fail until that column exists.
+ * tenant_slug is live. NULL row slugs belong to the dogfood tenant
+ * "submerged". Other tenants never match NULL rows.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
