@@ -250,6 +250,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <script src="/js/tenant.js"></script>
+  <script src="/js/tenant-scope.js"></script>
 </head>
 <body>
 
@@ -609,7 +610,16 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 let sb;
 // Tenant slug for gamification RPCs (config falls back to 'default' server-side)
-const TENANT_SLUG = (function(){ try { return (window.resolveTenantSlug && window.resolveTenantSlug()) || ''; } catch(_) { return ''; } })();
+function tenantSlug() {
+  try { return (window.resolveTenantSlug && window.resolveTenantSlug()) || ''; } catch (_) { return ''; }
+}
+const TENANT_SLUG = tenantSlug();
+function scope(query) {
+  return window.TenantScope.apply(query, tenantSlug());
+}
+function stamped(fields) {
+  return window.TenantScope.withTenant(fields, tenantSlug());
+}
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -776,7 +786,7 @@ async function doSignup() {
     btn.disabled = false; btn.textContent = 'Create account';
     return;
   }
-  const { error: repErr } = await sb.from('reps').insert({
+  const { error: repErr } = await sb.from('reps').insert(stamped({
     user_id: data.user.id,
     name: first + ' ' + last,
     email,
@@ -785,7 +795,7 @@ async function doSignup() {
     promo_code: code,
     rank: 'Recruit',
     lifetime_points: 0
-  });
+  }));
   if (repErr) {
     err.textContent = repErr.message.includes('promo_code') ? 'That promo code is already taken. Try another.' : repErr.message;
     err.style.display = 'block';
@@ -869,7 +879,7 @@ async function loadRep() {
     const base = (first.substring(0,4) + Math.floor(10+Math.random()*89)).toUpperCase().replace(/[^A-Z0-9]/g,'');
 
     // Auto-connect Spotify since they just logged in with it
-    const { data: newRep, error } = await sb.from('reps').insert({
+    const { data: newRep, error } = await sb.from('reps').insert(stamped({
       user_id: currentUser.id,
       name: fullName,
       email: currentUser.email || '',
@@ -877,7 +887,7 @@ async function loadRep() {
       rank: 'Recruit',
       lifetime_points: 0,
       spotify_connected: true
-    }).select().single();
+    })).select().single();
 
     if (error) {
       console.error('Failed to create rep profile:', error);
@@ -1074,7 +1084,7 @@ async function renderActivityFeed() {
 // EVENTS
 // ══════════════════════════════════════════════════════
 async function loadEvents() {
-  const { data: events } = await sb.from('events').select('*').order('date');
+  const { data: events } = await scope(sb.from('events').select('*')).order('date');
   allEvents = events || [];
   const { data: repEvents } = await sb.from('rep_events').select('*').eq('rep_id', currentRep.id);
   const joinedIds = new Set((repEvents||[]).map(re=>re.event_id));
@@ -1120,7 +1130,7 @@ function renderEvents(events, joinedIds, repEvents) {
 
 async function joinEvent(eventId, btn) {
   btn.disabled = true; btn.textContent = 'Joining...';
-  const { error } = await sb.from('rep_events').insert({ rep_id: currentRep.id, event_id: eventId });
+  const { error } = await sb.from('rep_events').insert(stamped({ rep_id: currentRep.id, event_id: eventId }));
   if (!error) {
     btn.textContent = '✓ Active';
     btn.closest('.event-card').classList.add('joined');
@@ -1240,9 +1250,9 @@ async function submitContent() {
   const suc = document.getElementById('sub-success');
   err.style.display = 'none'; suc.style.display = 'none';
   if (!url) { err.textContent = 'Please enter the post URL.'; err.style.display = 'block'; return; }
-  const { error } = await sb.from('content_submissions').insert({
+  const { error } = await sb.from('content_submissions').insert(stamped({
     rep_id: currentRep.id, event_id: eventId, platform, content_type: type, url, status: 'pending'
-  });
+  }));
   if (error) { err.textContent = 'Submission failed. Try again.'; err.style.display = 'block'; return; }
   suc.textContent = 'Submitted! We\'ll review and award your points within 24 hours.';
   suc.style.display = 'block';
@@ -1316,9 +1326,9 @@ async function shareMix(btn) {
   const host = (()=>{ try { return new URL(url).hostname.toLowerCase(); } catch(e) { return ''; } })();
   const platform = /instagram/.test(host) ? 'instagram' : /tiktok/.test(host) ? 'tiktok' : /facebook|fb\./.test(host) ? 'facebook' : /youtu/.test(host) ? 'youtube' : /twitter|x\.com/.test(host) ? 'twitter' : 'other';
   btn.disabled = true;
-  const { error } = await sb.from('content_submissions').insert({
+  const { error } = await sb.from('content_submissions').insert(stamped({
     rep_id: currentRep.id, event_id: null, platform, content_type: 'flyer_share', url, status: 'pending'
-  });
+  }));
   if (error) { btn.disabled = false; alert('Submission failed. Try again.'); return; }
   btn.textContent = '✓ Submitted. +50 pts once approved';
   btn.style.background = 'var(--gold-dim)';
