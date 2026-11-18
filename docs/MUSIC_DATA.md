@@ -11,6 +11,13 @@ Reps share music taste two ways, both optional:
 
 Both award points (defaults: 100 for the upload, 50 for the quiz).
 
+## How the data is used (product position, set by Shaun 2026-11-18)
+
+The team uses it only to plan and book shows and events. It is never sold, it is not shared outside
+the team except as required by law, and reps can delete it anytime. There are no insight reports or
+exports for organizers, other teams, or third parties. The Terms (section 7a), the My Music consent
+text, and the signup note all say this. Legal review of that text is recommended, not required.
+
 ## What is saved (`public.rep_music_profiles`)
 
 `top_artists` (20: name, plays, hours), `top_tracks` (20: track, artist, plays), `listening_totals`

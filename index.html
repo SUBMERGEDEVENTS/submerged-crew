@@ -287,7 +287,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           ✉️ Continue with email
         </button>
 
-        <div data-tenant-consent style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">Signing up takes an email and a password. Sharing your music taste is optional and happens after you sign in.</div>
+        <div data-tenant-consent style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">Signing up takes an email and a password. Sharing your music taste is optional. If you share it, your team uses it only to plan and book shows and events, never sells it, and does not share it outside the team except as required by law. You can delete it anytime.</div>
       </div>
 
       <!-- EMAIL FALLBACK — hidden by default -->
@@ -539,7 +539,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
             <div>
               <div style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:4px;">Share your music taste</div>
-              <div class="taste-note" style="max-width:520px;">Help your team's organizers book and promote shows you and your crowd will love. It is optional, you pick what to share, and you can delete it anytime.</div>
+              <div class="taste-note" style="max-width:520px;">Help your team pick the artists and shows you and your crowd will love. It is optional and you pick what to share. Your team uses it only to plan and book shows and events. It is never sold, and it is not shared outside the team except as required by law. You can delete it anytime.</div>
             </div>
             <div>
               <span class="badge b-cyan" id="taste-pts-upload">+100 pts upload</span>
@@ -588,7 +588,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
             </div>
             <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;margin:12px 0;cursor:pointer;">
               <input type="checkbox" id="taste-consent" style="margin-top:3px;" onchange="updateTasteSaveBtn()" />
-              <span>I agree to share this summary with my team's organizers so they can understand the crowd. I can delete it anytime from this page. See the <a href="/terms.html#music-data" target="_blank" rel="noopener" style="color:var(--cyan);">music data section of the Terms</a>.</span>
+              <span>I agree to let my team use this summary to plan and book shows and events. It is never sold and not shared outside the team except as required by law. I can delete it anytime from this page. See the <a href="/terms.html#music-data" target="_blank" rel="noopener" style="color:var(--cyan);">music data section of the Terms</a>.</span>
             </label>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="auth-btn" id="taste-save-btn" style="width:auto;padding:11px 18px;margin:0;" disabled onclick="saveMusicUpload()">Save to my profile</button>
@@ -613,7 +613,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           <div id="quiz-discovery"></div>
           <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;margin:14px 0 10px;cursor:pointer;">
             <input type="checkbox" id="quiz-consent" style="margin-top:3px;" onchange="updateTasteSaveBtn()" />
-            <span>I agree to share these answers with my team's organizers. I can delete them anytime from this page.</span>
+            <span>I agree to let my team use these answers to plan and book shows and events. They are never sold and not shared outside the team except as required by law. I can delete them anytime from this page.</span>
           </label>
           <button class="auth-btn" id="quiz-save-btn" style="width:auto;padding:11px 18px;margin:0;" disabled onclick="saveMusicQuiz()">Save my answers</button>
           <div id="quiz-msg" class="taste-err" style="display:none;"></div>
