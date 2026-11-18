@@ -11,13 +11,14 @@
     featureFlags: {
       socialLogin: true,
       musicMix: false,
+      musicTaste: true,
       adminAi: false,
       leaderboard: true
     },
     copy: {
       tagline: 'Street Team Portal',
       adminTagline: 'Admin Dashboard',
-      consentNote: 'By continuing you agree to let this program read your music taste data to personalize your experience. We never post on your behalf.'
+      consentNote: 'Signing up takes an email and a password. Sharing your music taste is optional. If you share it, your team uses it only to plan and book shows and events, never sells it, and does not share it outside the team except as required by law. You can delete it anytime.'
     }
   };
 
