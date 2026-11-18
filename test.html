@@ -8,9 +8,6 @@
 
 <h2 id="status">Testing Supabase connection...</h2>
 <p id="detail" style="color:#aaa;margin-top:1rem;"></p>
-<button id="spotify-btn" onclick="testSpotify()" style="display:none;margin-top:2rem;padding:14px 28px;background:#1DB954;color:black;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">
-  Test Spotify Login
-</button>
 <button id="email-btn" onclick="testEmail()" style="display:none;margin-top:1rem;padding:14px 28px;background:#00D4C8;color:#0d1b2e;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">
   Test Email Login
 </button>
@@ -81,25 +78,10 @@ window.onload = async function() {
 
   document.getElementById('status').textContent = '✅ Supabase connection working';
   document.getElementById('detail').textContent = 'All systems go. Test login below';
-  document.getElementById('spotify-btn').style.display = 'inline-block';
   document.getElementById('email-btn').style.display = 'inline-block';
 
   window._sb = sb;
 };
-
-function testSpotify() {
-  log('🔄 Initiating Spotify OAuth...', '#1DB954');
-  window._sb.auth.signInWithOAuth({
-    provider: 'spotify',
-    options: { redirectTo: location.origin + location.pathname + location.search }
-  }).then(function(res) {
-    if (res.error) {
-      log('❌ Spotify error: ' + res.error.message, '#f87171');
-    } else {
-      log('✅ Redirecting to Spotify...', '#1DB954');
-    }
-  });
-}
 
 function testEmail() {
   document.getElementById('email-form').style.display = 'block';
