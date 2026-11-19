@@ -142,12 +142,36 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
   .form-grid{grid-template-columns:1fr;}
   .nav-btn{font-size:10px;padding:7px 2px;}
 }
+
+/* GIVEAWAY (Instagram comment picker) */
+.ig-demo-banner{background:var(--orange-dim);border:1px solid var(--orange-border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--orange);margin-bottom:12px;display:none;}
+.ig-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.ig-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin-top:10px;}
+.ig-check input{width:18px;height:18px;accent-color:var(--orange);}
+.ig-btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.ig-btn-row .form-btn{margin-top:0 !important;}
+.ig-ghost{background:var(--cyan-dim) !important;color:var(--cyan) !important;border:1px solid var(--cyan-border) !important;}
+.ig-quiet{background:transparent !important;color:var(--muted) !important;border:1px solid var(--border2) !important;}
+.ig-stat{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6;}
+.ig-stat b{color:var(--cyan);font-family:var(--font-head);font-size:18px;font-weight:400;}
+.ig-winner{display:flex;gap:10px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;margin-top:8px;}
+.ig-winner.alt{opacity:.8;border-style:dashed;}
+.ig-rank{font-family:var(--font-head);font-size:20px;color:var(--orange);min-width:28px;}
+.ig-winner a{color:var(--cyan);font-weight:600;text-decoration:none;word-break:break-all;}
+.ig-winner .ig-text{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere;}
+.ig-adv summary{cursor:pointer;font-size:12px;color:var(--muted);margin-top:12px;}
+textarea.form-input{resize:vertical;min-height:60px;font-family:var(--font-body);}
+@media(max-width:700px){
+  .ig-row{grid-template-columns:1fr;}
+  .ig-btn-row .form-btn{flex:1 1 100%;}
+}
 </style>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <script src="/js/tenant.js"></script>
   <script src="/js/tenant-scope.js"></script>
   <script src="/js/analytics.js"></script>
+  <script src="/js/ig-picker.js"></script>
 </head>
 <body>
 
@@ -193,6 +217,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <button class="nav-btn" onclick="showView('content')">Content</button>
         <button class="nav-btn" onclick="showView('payouts')">Payouts</button>
         <button class="nav-btn" onclick="showView('events')">Events</button>
+        <button class="nav-btn" id="nav-giveaway" style="display:none;" onclick="showView('giveaway')">Giveaway</button>
       </div>
 
       <!-- ── OVERVIEW ── -->
@@ -459,6 +484,102 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         </div>
       </div>
 
+
+      <!-- ── GIVEAWAY (Instagram comment picker, flag igCommentPicker) ── -->
+      <div id="view-giveaway" class="view">
+        <div class="ig-demo-banner" id="ig-demo-banner"><b>SAMPLE DATA.</b> These comments are made up to try the picker. Nothing is loaded from Instagram and no draw is saved.</div>
+
+        <div class="card" id="ig-conn-card">
+          <div class="card-title">Instagram connection</div>
+          <div class="section-sub" id="ig-conn-status">Checking...</div>
+          <div class="ig-btn-row">
+            <button class="form-btn" id="ig-connect-btn" onclick="igConnect()">Connect Instagram</button>
+            <button class="form-btn ig-ghost" id="ig-refresh-btn" style="display:none;" onclick="igRefresh()">Refresh token</button>
+            <button class="form-btn ig-quiet" id="ig-disconnect-btn" style="display:none;" onclick="igDisconnect()">Disconnect</button>
+          </div>
+          <details class="ig-adv">
+            <summary>Advanced: paste an access token instead</summary>
+            <div class="form-grid" style="margin-top:8px;">
+              <div class="form-group">
+                <label class="form-label" for="ig-tok-host">Token type</label>
+                <select class="form-input" id="ig-tok-host">
+                  <option value="graph.instagram.com">Instagram login token (graph.instagram.com)</option>
+                  <option value="graph.facebook.com">Unified login token (graph.facebook.com)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ig-tok">Access token</label>
+                <input class="form-input" id="ig-tok" type="password" autocomplete="off" placeholder="Paste a token from the Meta App Dashboard" />
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;">Stored encrypted on the server and never shown again. Use this if the Connect button is not available for your Meta app.</div>
+            <button class="form-btn ig-ghost" onclick="igSaveToken()">Save token</button>
+          </details>
+          <div id="ig-conn-msg" style="display:none;margin-top:8px;font-size:12px;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">1. Load the post</div>
+          <div class="form-group">
+            <label class="form-label" for="ig-post-url">Instagram post or reel link</label>
+            <input class="form-input" id="ig-post-url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.instagram.com/p/XXXXXXXX/" />
+          </div>
+          <label class="ig-check"><input type="checkbox" id="ig-include-replies" /> Also count replies to comments</label>
+          <div class="ig-btn-row">
+            <button class="form-btn" id="ig-load-btn" onclick="igLoadComments()">Load comments</button>
+            <button class="form-btn ig-ghost" onclick="igLoadDemo()">Try with sample comments</button>
+          </div>
+          <div id="ig-load-msg" style="display:none;margin-top:8px;font-size:12px;"></div>
+          <div class="ig-stat" id="ig-loaded-stat" style="display:none;"></div>
+        </div>
+
+        <div class="card" id="ig-rules-card" style="display:none;">
+          <div class="card-title">2. Set the rules</div>
+          <label class="ig-check" style="margin-top:0;"><input type="checkbox" id="ig-one-per" checked onchange="igRecount()" /> One entry per username</label>
+          <div class="ig-row" style="margin-top:12px;">
+            <div class="form-group">
+              <label class="form-label" for="ig-min-tags">Must tag at least</label>
+              <input class="form-input" id="ig-min-tags" type="number" min="0" max="10" value="0" oninput="igRecount()" />
+              <span style="font-size:11px;color:var(--muted);">@ tags in the comment (0 = no rule)</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ig-keyword">Comment must contain</label>
+              <input class="form-input" id="ig-keyword" type="text" maxlength="200" placeholder="enter, giveaway" oninput="igRecount()" />
+              <span style="font-size:11px;color:var(--muted);">Any of these words, separated by commas</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ig-winners">Winners</label>
+              <input class="form-input" id="ig-winners" type="number" min="1" max="50" value="1" oninput="igRecount()" />
+              <label class="form-label" for="ig-alternates" style="margin-top:6px;">Backup winners</label>
+              <input class="form-input" id="ig-alternates" type="number" min="0" max="20" value="0" oninput="igRecount()" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label" for="ig-exclude">Exclude usernames</label>
+            <textarea class="form-input" id="ig-exclude" rows="2" placeholder="Your own account, other admins, staff. One per line or separated by commas." oninput="igRecount()"></textarea>
+          </div>
+          <div class="ig-stat" id="ig-eligible-stat"></div>
+          <div class="ig-btn-row">
+            <button class="form-btn" id="ig-draw-btn" onclick="igDraw()">Draw winners</button>
+          </div>
+        </div>
+
+        <div class="card cyan-l" id="ig-result-card" style="display:none;">
+          <div class="card-title" id="ig-result-title">Winners</div>
+          <div id="ig-winners-list" aria-live="polite"></div>
+          <div id="ig-save-msg" style="display:none;margin-top:10px;font-size:12px;"></div>
+          <div class="ig-btn-row">
+            <button class="form-btn ig-ghost" onclick="igCopyResult(this)">Copy results</button>
+            <button class="form-btn ig-quiet" onclick="igDraw()">Draw again</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Past draws</div>
+          <div class="section-sub">Every saved draw stays on record, so you can show how a winner was picked.</div>
+          <div id="ig-history"><div class="empty">Loading...</div></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -540,8 +661,10 @@ function showScreen(id) {
 async function showApp() {
   showScreen('app');
   document.getElementById('admin-name').textContent = currentAdmin.email;
-  await Promise.all([loadAllData()]);
+  await Promise.all([loadAllData(), tenantConfigReady()]);
+  document.getElementById('nav-giveaway').style.display = igEnabled() ? '' : 'none';
   showView('overview');
+  igHandleReturn();
 }
 
 // ── DATA ──
@@ -1102,11 +1225,274 @@ function copyInvite(code, btn) {
 }
 
 function showView(id) {
+  if (id === 'giveaway' && !igEnabled()) id = 'overview';
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + id).classList.add('active');
-  const idx = ['overview', 'reps', 'content', 'payouts', 'events'].indexOf(id);
+  const idx = ['overview', 'reps', 'content', 'payouts', 'events', 'giveaway'].indexOf(id);
   document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (id === 'giveaway') igOpen();
+}
+
+// ── GIVEAWAY: Instagram comment picker (feature flag igCommentPicker) ──
+function tenantConfigReady() {
+  if (window.__tenantLoaded) return Promise.resolve();
+  return new Promise(res => { document.addEventListener('tenantready', () => res(), { once: true }); setTimeout(res, 4000); });
+}
+function igEnabled() {
+  const f = (window.AppTenant && window.AppTenant.featureFlags) || {};
+  return f.igCommentPicker === true;
+}
+let igComments = [];      // loaded comments (real or sample)
+let igPost = null;        // { url, media_id, account, demo }
+let igLastDraw = null;    // { winners, rules, ... }
+let igConn = null;        // status from the Edge Function
+let igOpened = false;
+
+function igMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  if (!text) { el.style.display = 'none'; return; }
+  el.textContent = text;
+  el.style.display = 'block';
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+}
+
+// Calls the ig-comments Edge Function with the admin's own session. The Instagram token never reaches the browser.
+async function igCall(body) {
+  try {
+    const { data, error } = await sb.functions.invoke('ig-comments', { body: Object.assign({ tenant: tenantSlug() }, body) });
+    if (error) {
+      let payload = null;
+      try { if (error.context && error.context.json) payload = await error.context.json(); } catch (_) { /* ignore */ }
+      if (payload && payload.error) return { error: payload.message || payload.error, code: payload.error };
+      return { error: 'The Instagram service is not set up yet. Ask your Woosah contact to finish setup (docs/IG_COMMENT_PICKER.md).', code: 'unavailable' };
+    }
+    return { data };
+  } catch (e) {
+    return { error: 'Could not reach the Instagram service.', code: 'unavailable' };
+  }
+}
+
+function igOpen() {
+  if (!igOpened) { igOpened = true; igLoadStatus(); }
+  igLoadHistory();
+}
+
+async function igLoadStatus() {
+  const st = document.getElementById('ig-conn-status');
+  const r = await igCall({ action: 'status' });
+  igConn = r.data || null;
+  const connectBtn = document.getElementById('ig-connect-btn');
+  const refreshBtn = document.getElementById('ig-refresh-btn');
+  const discBtn = document.getElementById('ig-disconnect-btn');
+  if (r.error) {
+    st.textContent = r.error;
+    connectBtn.style.display = 'none'; refreshBtn.style.display = 'none'; discBtn.style.display = 'none';
+    return;
+  }
+  const c = r.data;
+  if (c.connected) {
+    const exp = c.expires_at ? ' Token valid until ' + new Date(c.expires_at).toLocaleDateString() + '.' : '';
+    st.textContent = 'Connected as @' + (c.username || 'unknown') + '.' + exp;
+    connectBtn.style.display = 'none';
+    discBtn.style.display = '';
+    refreshBtn.style.display = (c.api_host === 'graph.instagram.com' && c.expires_at) ? '' : 'none';
+    const ex = document.getElementById('ig-exclude');
+    if (c.username && !ex.value.trim()) { ex.value = c.username; }
+  } else if (!c.app_configured) {
+    st.textContent = 'Not connected. The Meta app is not configured on the server yet, so use the steps in docs/IG_COMMENT_PICKER.md first.';
+    connectBtn.style.display = ''; discBtn.style.display = 'none'; refreshBtn.style.display = 'none';
+  } else {
+    st.textContent = 'Not connected. Connect the Instagram Business or Creator account that posted the giveaway.';
+    connectBtn.style.display = ''; discBtn.style.display = 'none'; refreshBtn.style.display = 'none';
+  }
+}
+
+async function igConnect() {
+  igMsg('ig-conn-msg', '');
+  const r = await igCall({ action: 'connect_url' });
+  if (r.error) { igMsg('ig-conn-msg', r.error, false); return; }
+  window.location.href = r.data.url;
+}
+
+async function igSaveToken() {
+  const tok = document.getElementById('ig-tok').value.trim();
+  if (!tok) { igMsg('ig-conn-msg', 'Paste an access token first.', false); return; }
+  const r = await igCall({ action: 'save_token', token: tok, api_host: document.getElementById('ig-tok-host').value });
+  if (r.error) { igMsg('ig-conn-msg', r.error, false); return; }
+  document.getElementById('ig-tok').value = '';
+  igMsg('ig-conn-msg', 'Saved. Connected as @' + (r.data.username || 'unknown') + '.', true);
+  igLoadStatus();
+}
+
+async function igRefresh() {
+  const r = await igCall({ action: 'refresh' });
+  if (r.error) { igMsg('ig-conn-msg', r.error, false); return; }
+  igMsg('ig-conn-msg', r.data.refreshed ? 'Token refreshed for another 60 days.' : 'Nothing to refresh yet (' + (r.data.reason || 'not due') + ').', r.data.refreshed);
+  igLoadStatus();
+}
+
+async function igDisconnect() {
+  if (!confirm('Disconnect Instagram? You can connect again at any time.')) return;
+  const { error } = await sb.rpc('ig_disconnect', { p_tenant: tenantSlug() });
+  if (error) { igMsg('ig-conn-msg', 'Could not disconnect: ' + error.message, false); return; }
+  igMsg('ig-conn-msg', 'Disconnected.', true);
+  igLoadStatus();
+}
+
+function igHandleReturn() {
+  if (!igEnabled()) return;
+  const q = new URLSearchParams(location.search);
+  const state = q.get('ig');
+  if (!state) return;
+  const reasons = {
+    denied: 'Instagram access was not granted.',
+    missing_permission: 'Instagram did not grant the comments permission. Connect again and accept every permission.',
+    code_exchange_failed: 'Instagram did not accept the login code. Try connecting again.',
+    long_token_failed: 'Instagram would not issue a long lived token. Try again.',
+    save_failed: 'Connected, but saving the token failed on the server.',
+    not_configured: 'The Meta app is not configured on the server yet.',
+    no_account: 'No Instagram account came back with that login.'
+  };
+  showView('giveaway');
+  if (state === 'connected') igMsg('ig-conn-msg', 'Instagram connected.', true);
+  else igMsg('ig-conn-msg', reasons[q.get('reason')] || 'Instagram connection failed. Try again.', false);
+  try { history.replaceState(null, '', location.pathname); } catch (_) { /* ignore */ }
+}
+
+// ── load comments ──
+function igSetLoaded(comments, post) {
+  igComments = comments;
+  igPost = post;
+  igLastDraw = null;
+  document.getElementById('ig-result-card').style.display = 'none';
+  document.getElementById('ig-demo-banner').style.display = post.demo ? 'block' : 'none';
+  document.getElementById('ig-rules-card').style.display = 'block';
+  const users = new Set(comments.map(c => IgPicker.normUser(c.username))).size;
+  const stat = document.getElementById('ig-loaded-stat');
+  stat.style.display = 'block';
+  stat.innerHTML = (post.demo ? 'Sample set: ' : 'Loaded ') + '<b>' + comments.length + '</b> comments from <b>' + users + '</b> people' +
+    (post.account ? ' on @' + esc(post.account) : '') + '.' +
+    (post.truncated ? ' <span style="color:var(--orange)">Stopped at the safety limit, some comments are missing.</span>' : '');
+  igRecount();
+}
+
+async function igLoadComments() {
+  const url = document.getElementById('ig-post-url').value.trim();
+  if (!url) { igMsg('ig-load-msg', 'Paste a link to the giveaway post first.', false); return; }
+  const btn = document.getElementById('ig-load-btn');
+  btn.disabled = true; btn.textContent = 'Loading...';
+  igMsg('ig-load-msg', 'Loading comments. Posts with thousands of comments can take a minute.', true);
+  const r = await igCall({ action: 'comments', post_url: url, include_replies: document.getElementById('ig-include-replies').checked });
+  btn.disabled = false; btn.textContent = 'Load comments';
+  if (r.error) {
+    igMsg('ig-load-msg', r.error, false);
+    if (r.code === 'token_expired' || r.code === 'not_connected') igLoadStatus();
+    return;
+  }
+  igMsg('ig-load-msg', '');
+  const d = r.data;
+  igSetLoaded(d.comments || [], { url, media_id: d.media && d.media.id, account: d.account, demo: false, truncated: d.truncated });
+}
+
+function igLoadDemo() {
+  igMsg('ig-load-msg', '');
+  const self = (igConn && igConn.username) || 'sample_host_account';
+  const ex = document.getElementById('ig-exclude');
+  if (!ex.value.trim()) ex.value = self + '\nsample_admin_helper';
+  document.getElementById('ig-post-url').value = 'https://www.instagram.com/p/SAMPLE_DEMO/';
+  igSetLoaded(IgPicker.sampleComments(self), { url: 'https://www.instagram.com/p/SAMPLE_DEMO/', media_id: null, account: self, demo: true });
+}
+
+// ── rules ──
+function igRules() {
+  return IgPicker.cleanRules({
+    onePerUser: document.getElementById('ig-one-per').checked,
+    minMentions: document.getElementById('ig-min-tags').value,
+    keyword: document.getElementById('ig-keyword').value,
+    excludeUsers: document.getElementById('ig-exclude').value,
+    ignoreMentions: igPost && igPost.account ? [igPost.account] : [],
+    winners: document.getElementById('ig-winners').value,
+    alternates: document.getElementById('ig-alternates').value
+  });
+}
+
+function igRecount() {
+  const el = document.getElementById('ig-eligible-stat');
+  if (!igComments.length) { el.textContent = ''; return null; }
+  const res = IgPicker.applyRules(igComments, igRules());
+  const rj = res.rejected;
+  const parts = [];
+  if (rj.excluded) parts.push(rj.excluded + ' from excluded accounts');
+  if (rj.keyword) parts.push(rj.keyword + ' missing the keyword');
+  if (rj.mentions) parts.push(rj.mentions + ' without enough tags');
+  el.innerHTML = '<b>' + res.eligibleUsers + '</b> people eligible' + (res.entries.length !== res.eligibleUsers ? ' (' + res.entries.length + ' entries)' : '') +
+    ' of ' + res.totalUsers + '.' + (parts.length ? '<br>Left out: ' + parts.join(', ') + '.' : '');
+  document.getElementById('ig-draw-btn').disabled = res.entries.length === 0;
+  return res;
+}
+
+// ── draw ──
+async function igDraw() {
+  const res = igRecount();
+  if (!res || !res.entries.length) { igMsg('ig-save-msg', 'No eligible entries to draw from.', false); return; }
+  const rules = igRules();
+  const winners = IgPicker.pickWinners(res.entries, rules);
+  const wcount = winners.filter(w => !w.alternate).length;
+  igLastDraw = {
+    winners, rules, entrant_count: res.totalUsers, eligible_count: res.entries.length,
+    post_url: igPost.url, media_id: igPost.media_id, demo: !!igPost.demo, drawn_at: new Date().toISOString()
+  };
+  document.getElementById('ig-result-card').style.display = 'block';
+  document.getElementById('ig-result-title').textContent = (igPost.demo ? 'Sample draw: ' : '') + (wcount === 1 ? 'Winner' : 'Winners');
+  document.getElementById('ig-winners-list').innerHTML = winners.map((w, i) => {
+    const n = w.alternate ? 'Backup ' + (i - wcount + 1) : String(i + 1);
+    return '<div class="ig-winner' + (w.alternate ? ' alt' : '') + '"><div class="ig-rank">' + esc(w.alternate ? 'B' + (i - wcount + 1) : n) + '</div><div>' +
+      '<a href="https://www.instagram.com/' + encodeURIComponent(w.username) + '/" target="_blank" rel="noopener noreferrer">@' + esc(w.username) + '</a>' +
+      (w.alternate ? ' <span class="badge b-gray">backup</span>' : '') +
+      '<div class="ig-text">' + esc(w.text) + '</div></div></div>';
+  }).join('');
+  document.getElementById('ig-result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (typeof track === 'function') track('ig_draw', { winners: wcount, eligible: res.entries.length, demo: !!igPost.demo });
+  if (igPost.demo) { igMsg('ig-save-msg', 'Sample draw, so nothing was saved.', true); return; }
+  igMsg('ig-save-msg', 'Saving the draw record...', true);
+  const { error } = await sb.from('ig_comment_draws').insert(stamped({
+    post_url: igLastDraw.post_url, media_id: igLastDraw.media_id || null,
+    rules: rules, entrant_count: igLastDraw.entrant_count, eligible_count: igLastDraw.eligible_count,
+    winners: winners
+  }));
+  if (error) igMsg('ig-save-msg', 'The winners are shown above but the record was not saved (' + error.message + '). Copy the results before leaving this page.', false);
+  else { igMsg('ig-save-msg', 'Saved to Past draws.', true); igLoadHistory(); }
+}
+
+function igResultText() {
+  if (!igLastDraw) return '';
+  const lines = [(igLastDraw.demo ? 'SAMPLE DRAW\n' : '') + 'Giveaway draw ' + new Date(igLastDraw.drawn_at).toLocaleString(),
+    'Post: ' + igLastDraw.post_url,
+    'Eligible entries: ' + igLastDraw.eligible_count + ' of ' + igLastDraw.entrant_count + ' people'];
+  let w = 0;
+  igLastDraw.winners.forEach(x => { lines.push((x.alternate ? 'Backup: @' : 'Winner ' + (++w) + ': @') + x.username); });
+  return lines.join('\n');
+}
+function igCopyResult(btn) {
+  navigator.clipboard.writeText(igResultText()).catch(() => {});
+  if (btn) { const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1500); }
+}
+
+async function igLoadHistory() {
+  const box = document.getElementById('ig-history');
+  let data, error;
+  try {
+    ({ data, error } = await scope(sb.from('ig_comment_draws').select('id,post_url,winners,entrant_count,eligible_count,drawn_at,rules')).order('drawn_at', { ascending: false }).limit(20));
+  } catch (e) { error = e; }
+  if (error) { box.innerHTML = '<div class="empty">Past draws are not available yet (the database step in docs/IG_COMMENT_PICKER.md is not done).</div>'; return; }
+  if (!data || !data.length) { box.innerHTML = '<div class="empty">No saved draws yet.</div>'; return; }
+  box.innerHTML = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>When</th><th>Post</th><th>Winners</th><th>Eligible</th></tr></thead><tbody>' +
+    data.map(d => {
+      const ws = (d.winners || []).filter(w => !w.alternate).map(w => '@' + esc(w.username)).join(', ');
+      return '<tr><td>' + esc(new Date(d.drawn_at).toLocaleString()) + '</td><td><a href="' + safeUrl(d.post_url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--cyan);">open</a></td><td>' +
+        (ws || '-') + '</td><td>' + esc(d.eligible_count) + ' of ' + esc(d.entrant_count) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
 }
 </script>
 </body>

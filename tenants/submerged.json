@@ -12,7 +12,8 @@
     "socialLogin": true,
     "musicMix": true,
     "adminAi": false,
-    "leaderboard": true
+    "leaderboard": true,
+    "igCommentPicker": true
   },
   "copy": {
     "tagline": "Street Team Portal",

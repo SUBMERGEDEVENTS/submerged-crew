@@ -14,7 +14,8 @@
   "supabaseAnonKey": "REPLACE_WITH_SAME_ANON_KEY_AS_submerged.json",
   "featureFlags": {
     "weeklyMix": true,
-    "points": true
+    "points": true,
+    "igCommentPicker": false
   },
   "copy": {
     "productName": "Street Team Portal"
