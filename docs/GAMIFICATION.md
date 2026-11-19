@@ -1,7 +1,7 @@
 # Gamification — Phase A
 
 Points, tiers, badges and leaderboards for the street-team portal, plus a
-**Rewards store — coming soon** placeholder (Phase B will add redemption).
+**Rewards store — coming soon** placeholder (Phase B will add redemption), hidden by default behind the `rewardsStore` feature flag.
 
 ## Points rule
 
