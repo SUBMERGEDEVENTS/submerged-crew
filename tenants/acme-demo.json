@@ -12,7 +12,8 @@
     "socialLogin": false,
     "rewardsStore": false,
     "adminAi": false,
-    "leaderboard": true
+    "leaderboard": true,
+    "igCommentPicker": false
   },
   "copy": {
     "tagline": "Street Team Portal",

@@ -16,3 +16,7 @@ the previous front end with it, because the new portal sends
 
 `20261113_before_team_eventbrite_payouts_rates.sql` removes the functions added
 by `20261113200000_team_eventbrite_payouts_rates.sql`. It deletes no rows.
+
+`20261119_before_ig_comment_picker.sql` removes the functions, policies and trigger added by
+`20261119120000_ig_comment_picker.sql`. It keeps the draw history and stored connection by default; a
+commented block at the bottom deletes them. Delete no rows unless you mean to.

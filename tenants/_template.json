@@ -15,7 +15,8 @@
   "featureFlags": {
     "socialLogin": false,
     "rewardsStore": false,
-    "points": true
+    "points": true,
+    "igCommentPicker": false
   },
   "copy": {
     "productName": "Street Team Portal"
