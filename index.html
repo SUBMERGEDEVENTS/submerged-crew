@@ -83,15 +83,9 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 .social-login-btn{width:100% !important;padding:14px 20px !important;border:none !important;border-radius:10px !important;font-family:var(--font-head) !important;font-size:15px !important;font-weight:800 !important;letter-spacing:0.06em !important;text-transform:uppercase !important;cursor:pointer !important;display:flex !important;align-items:center !important;justify-content:center !important;gap:12px !important;margin-bottom:10px !important;transition:opacity 0.15s !important;color:#0d1b2e !important;box-shadow:none !important;}
 .social-login-btn:hover{opacity:0.88 !important;}
 .social-login-btn:last-child{margin-bottom:0 !important;}
-.slb-spotify{background:#1DB954 !important;color:#0d1b2e !important;}
-.slb-soundcloud{background:#ff5500 !important;color:#ffffff !important;}
-.slb-apple{background:#fc3c44 !important;color:#ffffff !important;}
 .slb-email{background:var(--surface2) !important;color:var(--text) !important;border:1px solid var(--border2) !important;}
 .slb-email:hover{border-color:var(--orange) !important;}
 .slb-email:hover{border-color:var(--cyan) !important;}
-.divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
-.divider-line{flex:1;height:1px;background:var(--border2);}
-.divider-text{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
 .auth-error{background:var(--red-dim);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;display:none;}
 .auth-success{background:var(--green-dim);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);margin-top:12px;display:none;}
 
@@ -116,6 +110,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
 /* VIEWS */
 .view{display:none;}.view.active{display:block;}
+/* LOADING SKELETON */
+.skel{display:inline-block;min-width:3ch;height:1em;vertical-align:middle;border-radius:4px;background:linear-gradient(90deg,var(--surface2,#16263d) 25%,rgba(255,255,255,0.10) 50%,var(--surface2,#16263d) 75%);background-size:200% 100%;animation:skel 1.2s ease-in-out infinite;}
+.skel.w-lg{min-width:9ch;}
+@keyframes skel{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
 /* CARDS */
 .card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:12px;}
@@ -200,18 +198,6 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 .submit-form{display:none;}
 .submit-form.open{display:block;}
 
-/* CONNECT BTNS */
-.connect-btn{width:100% !important;padding:13px 20px !important;border:none !important;border-radius:8px !important;font-family:var(--font-head) !important;font-size:15px !important;font-weight:800 !important;letter-spacing:0.06em !important;text-transform:uppercase !important;cursor:pointer !important;transition:opacity 0.15s !important;margin-bottom:8px !important;box-shadow:none !important;}
-.connect-btn:hover{opacity:0.88 !important;}
-.connect-btn.spotify{background:#1DB954 !important;color:#0d1b2e !important;}
-.connect-btn.apple{background:#fc3c44 !important;color:#ffffff !important;}
-.connect-btn.youtube{background:#FF0000 !important;color:#ffffff !important;}
-.connect-btn.soundcloud{background:#ff5500 !important;color:#ffffff !important;}
-.step-num{width:32px;height:32px;border-radius:50%;background:var(--cyan-dim);border:1px solid var(--cyan-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:900;font-size:14px;color:var(--cyan);flex-shrink:0;}
-.account-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);margin-bottom:6px;}
-.account-disconnect{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;}
-.account-disconnect:hover{border-color:var(--red);color:var(--red);}
-.taste-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
 
 /* EMPTY STATE */
 .empty{text-align:center;padding:2rem;color:var(--muted);font-size:13px;}
@@ -275,41 +261,20 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
     </div>
     <div class="login-card">
 
-      <!-- SOCIAL LOGIN — shown by default -->
-      <div id="social-login-panel">
+      <!-- AUTH HOME: shown by default (email only) -->
+      <div id="auth-home-panel">
         <div style="font-family:var(--font-head);font-size:26px;font-weight:900;color:var(--text);margin-bottom:1.25rem;letter-spacing:0.06em;text-align:center;">SIGN IN - PARTY ON</div>
-
-        <button class="social-login-btn slb-spotify" onclick="socialLogin('spotify')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-          Continue with Spotify
-        </button>
-
-        <button class="social-login-btn slb-soundcloud" onclick="socialLogin('soundcloud')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M0 13.914c0 1.752 1.317 3.176 2.988 3.176.083 0 9.722-.005 9.75-.005 1.505 0 2.726-1.259 2.726-2.813 0-.448-.104-.87-.287-1.245.123-.408.19-.84.19-1.288C15.367 9.3 13.142 7 10.383 7c-1.736 0-3.267.908-4.148 2.286C5.88 9.108 5.479 9 5.054 9 2.261 9 0 11.196 0 13.914zM17 11.108c-.393 0-.765.078-1.107.214C15.962 9.363 14.3 8 12.32 8c-.31 0-.61.04-.895.114C12.027 6.842 13.404 6 14.98 6c2.21 0 4.003 1.79 4.003 4 0 .038-.003.076-.004.114A3.5 3.5 0 0 0 17 9.5c-1.933 0-3.5 1.567-3.5 3.5s1.567 3.5 3.5 3.5S20.5 14.933 20.5 13s-1.567-3.5-3.5-3.5z"/></svg>
-          Continue with SoundCloud
-        </button>
-
-        <button class="social-login-btn slb-apple" onclick="socialLogin('apple')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-          Continue with Apple Music
-        </button>
-
-        <div class="divider">
-          <div class="divider-line"></div>
-          <div class="divider-text">or</div>
-          <div class="divider-line"></div>
-        </div>
 
         <button class="social-login-btn slb-email" onclick="showEmailLogin()">
           ✉️ Continue with email
         </button>
 
-        <div data-tenant-consent style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to let this program read your music taste data to personalize your experience. We never post on your behalf.</div>
+        <div data-tenant-consent style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">By continuing you agree to the Woosah Terms of Use. We never post on your behalf.</div>
       </div>
 
       <!-- EMAIL FALLBACK — hidden by default -->
       <div id="email-login-panel" style="display:none;">
-        <button onclick="showSocialLogin()" style="background:transparent;border:none;color:var(--cyan);font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:1rem;padding:0;letter-spacing:0.04em;">← Back</button>
+        <button onclick="showAuthHome()" style="background:transparent;border:none;color:var(--cyan);font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:1rem;padding:0;letter-spacing:0.04em;">← Back</button>
         <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:1rem;">Email sign in</div>
         <label class="field-label">Email</label>
         <input class="field-input" id="login-email" type="email" placeholder="your@email.com" />
@@ -359,10 +324,10 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <div class="auth-success" id="signup-success"></div>
       </div>
 
-      <!-- FINISH PROFILE: shown after Spotify/Apple sign-in, or for an account with no profile on this team -->
+      <!-- FINISH PROFILE: shown for a signed-in account with no profile on this team -->
       <div id="finish-profile-panel" style="display:none;">
         <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:0.5rem;">Finish your profile</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.45;">You're signed in as <span id="finish-email" style="color:var(--text);"></span>. Pick your promo code to join this team.</div>
+        <div id="finish-intro" style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.45;">Pick your promo code to join this team.</div>
         <label class="field-label">Your promo code</label>
         <input class="field-input" id="finish-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
         <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
@@ -393,7 +358,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
       <div class="header-right">
         <div class="rep-pill">
           <div class="rep-av" id="header-av" style="background:var(--cyan-dim);color:var(--cyan);">?</div>
-          <div class="rep-pill-name" id="header-name">Loading</div>
+          <div class="rep-pill-name" id="header-name"><span class="skel"></span></div>
         </div>
         <button class="logout-btn" onclick="doLogout()">Log out</button>
       </div>
@@ -401,12 +366,11 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
     <div class="wave-top"></div>
     <div class="app-body">
       <div class="nav">
-        <button class="nav-btn active" onclick="showView('home')">My Stats</button>
-        <button class="nav-btn" onclick="showView('events')">Events</button>
-        <button class="nav-btn" onclick="showView('leaderboard')">Rankings</button>
-        <button class="nav-btn" onclick="showView('submit')">Submit</button>
-        <button class="nav-btn" id="nav-music" style="display:none;" onclick="showView('music')">Mix</button>
-        <button class="nav-btn" onclick="showView('rewards')">Rewards</button>
+        <button class="nav-btn active" data-view="home" onclick="showView('home')">My Stats</button>
+        <button class="nav-btn" data-view="events" onclick="showView('events')">Events</button>
+        <button class="nav-btn" data-view="leaderboard" onclick="showView('leaderboard')">Rankings</button>
+        <button class="nav-btn" data-view="submit" onclick="showView('submit')">Submit</button>
+        <button class="nav-btn" data-view="rewards" id="nav-rewards" style="display:none;" onclick="showView('rewards')">Rewards</button>
       </div>
 
       <!-- ── MY STATS ── -->
@@ -414,22 +378,22 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <div class="metrics">
           <div class="metric">
             <div class="metric-label">Codes sold</div>
-            <div class="metric-val" id="m-codes">-</div>
+            <div class="metric-val" id="m-codes"><span class="skel"></span></div>
             <div class="metric-sub">this event</div>
           </div>
           <div class="metric">
             <div class="metric-label">Cash earned</div>
-            <div class="metric-val" id="m-cash">-</div>
+            <div class="metric-val" id="m-cash"><span class="skel"></span></div>
             <div class="metric-sub">pending payout</div>
           </div>
           <div class="metric">
             <div class="metric-label">Total points</div>
-            <div class="metric-val" id="m-pts">-</div>
+            <div class="metric-val" id="m-pts"><span class="skel"></span></div>
             <div class="metric-sub">lifetime</div>
           </div>
           <div class="metric">
             <div class="metric-label">Content posts</div>
-            <div class="metric-val" id="m-posts">-</div>
+            <div class="metric-val" id="m-posts"><span class="skel"></span></div>
             <div class="metric-sub">approved</div>
           </div>
         </div>
@@ -439,12 +403,12 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           <div class="rank-progress">
             <div style="font-size:28px;" id="rank-icon">🎫</div>
             <div style="flex:1;">
-              <div style="font-family:var(--font-head);font-size:18px;font-weight:900;" id="rank-name">Recruit</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="rank-sub">Keep selling to level up</div>
+              <div style="font-family:var(--font-head);font-size:18px;font-weight:900;" id="rank-name"><span class="skel w-lg"></span></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="rank-sub"><span class="skel w-lg"></span></div>
               <div class="prog-bar"><div class="prog-fill" id="rank-prog" style="width:0%;"></div></div>
             </div>
             <div style="text-align:right;">
-              <div style="font-family:var(--font-head);font-size:22px;font-weight:900;color:var(--cyan);" id="rank-pts-val">0</div>
+              <div style="font-family:var(--font-head);font-size:22px;font-weight:900;color:var(--cyan);" id="rank-pts-val"><span class="skel"></span></div>
               <div style="font-size:10px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">pts</div>
             </div>
           </div>
@@ -462,12 +426,12 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
           <div class="code-display">
             <div class="code-label">Share this to earn</div>
-            <div class="code-val" id="my-code">-</div>
+            <div class="code-val" id="my-code"><span class="skel w-lg"></span></div>
             <button class="code-copy" onclick="copyCode()">Copy code</button>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
-            <span>Each use earns pts + cash</span>
-            <span id="rate-label" style="color:var(--cyan);font-weight:600;">$2.00 / code</span>
+          <div id="rate-row" style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);">
+            <span id="rate-desc"><span class="skel w-lg"></span></span>
+            <span id="rate-label" style="color:var(--cyan);font-weight:600;"><span class="skel"></span></span>
           </div>
         </div>
 
@@ -497,12 +461,9 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <div class="card">
           <div class="card-title">Point values</div>
           <div id="point-values" style="display:flex;flex-direction:column;">
-            <div class="pv-row"><span>Ticket sold with your code</span><span class="badge b-cyan">+20 pts + cash</span></div>
-            <div class="pv-row"><span>Flyer share (approved)</span><span class="badge b-purple">+50 pts</span></div>
-            <div class="pv-row"><span>Original content (approved)</span><span class="badge b-gold">+150 pts</span></div>
-            <div class="pv-row"><span>10 tickets for one show</span><span class="badge b-cyan">+200 pts</span></div>
-            <div class="pv-row"><span>25 tickets for one show</span><span class="badge b-gold">+500 pts + $10</span></div>
-            <div class="pv-row"><span>50 tickets for one show</span><span class="badge b-gold">+1,000 pts + $25</span></div>
+            <div class="pv-row"><span><span class="skel w-lg"></span></span><span><span class="skel"></span></span></div>
+            <div class="pv-row"><span><span class="skel w-lg"></span></span><span><span class="skel"></span></span></div>
+            <div class="pv-row"><span><span class="skel w-lg"></span></span><span><span class="skel"></span></span></div>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">Milestones count tickets sold with your code for a single show. Milestone cash bonuses are added for Eventbrite orders. Content points count once a coordinator approves your post. Refunded sales and un-approved posts drop out of your total.</div>
         </div>
@@ -547,60 +508,9 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         </div>
       </div>
 
-      <!-- ── MUSIC ── -->
-      <div id="view-music" class="view">
-        <div id="music-disconnected">
-          <div class="card" style="text-align:center;padding:2rem 1.5rem;">
-            <div style="font-size:48px;margin-bottom:1rem;">🎧</div>
-            <div data-tenant-mix style="font-family:var(--font-head);font-size:22px;font-weight:900;margin-bottom:8px;">Woosah Weekly Mix</div>
-            <div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">Connect your music and your taste shapes the team's weekly playlist. Higher rank = more influence.</div>
-            <div style="max-width:300px;margin:0 auto;">
-              <button class="connect-btn spotify" onclick="connectMusic('spotify')">Connect Spotify</button>
-              <button class="connect-btn apple" onclick="connectMusic('apple')">Connect Apple Music</button>
-              <button class="connect-btn youtube" onclick="connectMusic('youtube')">Connect YouTube Music</button>
-              <button class="connect-btn soundcloud" onclick="connectMusic('soundcloud')">Connect SoundCloud</button>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:1.25rem;">Read-only access: we never post or modify anything</div>
-          </div>
-          <div class="card">
-            <div class="card-title">How the mix works</div>
-            <div style="display:flex;flex-direction:column;gap:14px;">
-              <div style="display:flex;gap:12px;"><div class="step-num">1</div><div><div style="font-weight:600;font-size:13px;">Connect your accounts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">We pull your top tracks and taste profile</div></div></div>
-              <div style="display:flex;gap:12px;"><div class="step-num">2</div><div><div style="font-weight:600;font-size:13px;">Your taste shapes the mix</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Every Sunday we blend the whole team's data into one playlist</div></div></div>
-              <div style="display:flex;gap:12px;"><div class="step-num">3</div><div><div style="font-weight:600;font-size:13px;">Higher rank = more influence</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Legend reps have 3x the influence vs Recruits</div></div></div>
-              <div style="display:flex;gap:12px;"><div class="step-num">4</div><div><div style="font-weight:600;font-size:13px;">Share the mix for +50 pts</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Drops every Sunday. Post it, then tap Share to submit the link. Points land once approved.</div></div></div>
-            </div>
-          </div>
-        </div>
-        <div id="music-connected" style="display:none;">
-          <div class="card cyan-l">
-            <div class="card-title">Connected accounts</div>
-            <div id="connected-accounts"></div>
-          </div>
-          <div class="card">
-            <div class="card-title">Your taste profile</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;" id="taste-tags"></div>
-            <div id="taste-bars"></div>
-          </div>
-          <div class="card" style="border-color:var(--cyan-border);">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
-              <div>
-                <div style="font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">This week's mix</div>
-                <div data-tenant-mix-vol="12" style="font-family:var(--font-head);font-size:22px;font-weight:900;">Woosah Vol. 12</div>
-                <div style="font-family:var(--font-head);font-size:13px;color:var(--cyan);font-weight:600;margin-top:2px;">Week of Apr 7, 2026 · 24 tracks · 1h 38m</div>
-              </div>
-              <div style="background:var(--cyan);width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🌊</div>
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button style="flex:1;padding:10px;background:#1DB954;border:none;border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:white;cursor:pointer;">Open in Spotify</button>
-              <button onclick="shareMix(this)" style="flex:1;padding:10px;background:var(--cyan-dim);border:1px solid var(--cyan-border);border-radius:8px;font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--cyan);cursor:pointer;">Share for +50 pts</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
       <!-- ── REWARDS STORE (Phase B placeholder) ── -->
+      <!-- Rewards store: inert template, only mounted when the rewardsStore feature flag is true -->
+      <template id="tpl-rewards">
       <div id="view-rewards" class="view">
         <div class="card cyan-l" style="text-align:center;padding:2rem 1.5rem;">
           <div style="font-size:44px;margin-bottom:6px;">🎁</div>
@@ -609,7 +519,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:420px;margin:0 auto;">Soon you'll be able to spend your points on crew rewards. Keep stacking now. Every ticket sold with your code adds to your balance.</div>
           <div style="margin-top:1.25rem;display:inline-flex;align-items:baseline;gap:8px;padding:10px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;">
             <span style="font-size:11px;color:var(--muted);font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Your points</span>
-            <span style="font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--cyan);" id="store-pts">-</span>
+            <span style="font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--cyan);" id="store-pts"></span>
           </div>
         </div>
         <div class="card">
@@ -623,6 +533,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
           <div style="font-size:11px;color:var(--muted);margin-top:12px;">Rewards and point prices are not final. Your current points will carry over when the store opens.</div>
         </div>
       </div>
+      </template>
     </div>
     <div class="wave-bot" style="margin-top:2rem;"></div>
   </div>
@@ -667,14 +578,26 @@ function initSupabase() {
 }
 
 // ── Feature flags ──
-// The Mix tab is a SUB:MERGED-only preview (no real music data yet).
-function mixEnabled() {
-  const flags = (window.AppTenant && AppTenant.featureFlags) || {};
-  return TENANT_SLUG === 'submerged' && flags.musicMix !== false;
+// Flags come from tenants/{slug}.json (merged over the defaults in js/tenant.js).
+function featureFlags() {
+  return (window.AppTenant && AppTenant.featureFlags) || {};
+}
+// The Rewards store is off unless a tenant sets rewardsStore: true.
+function rewardsEnabled() {
+  return featureFlags().rewardsStore === true;
 }
 function applyFeatureFlags() {
-  const btn = document.getElementById('nav-music');
-  if (btn) btn.style.display = mixEnabled() ? '' : 'none';
+  const btn = document.getElementById('nav-rewards');
+  const on = rewardsEnabled();
+  if (on && !document.getElementById('view-rewards')) {
+    const tpl = document.getElementById('tpl-rewards');
+    if (tpl && tpl.parentNode) tpl.parentNode.insertBefore(tpl.content.cloneNode(true), tpl);
+  }
+  if (btn) btn.style.display = on ? '' : 'none';
+  if (!on) {
+    const v = document.getElementById('view-rewards');
+    if (v && v.classList.contains('active')) showView('home');
+  }
 }
 document.addEventListener('tenantready', applyFeatureFlags);
 
@@ -729,7 +652,6 @@ function friendlyRepError(e) {
 let currentUser = null;
 let currentRep = null;
 let allEvents = [];
-let musicConnected = {};
 
 // ══════════════════════════════════════════════════════
 // BOOT — check session on load
@@ -741,9 +663,6 @@ async function boot() {
       currentUser = session.user;
       if (!(await loadRep())) return;
       showScreen('app');
-      if (currentRep) initMusicState();
-      const pending = sessionStorage.getItem('pendingMusicConnect');
-      if (pending) { sessionStorage.removeItem('pendingMusicConnect'); if (mixEnabled()) setTimeout(()=>{ showView('music'); connectMusic(pending); }, 600); }
     } else {
       // Check URL for OAuth error params
       const params = new URLSearchParams(window.location.search);
@@ -767,68 +686,28 @@ async function boot() {
 // AUTH — social login panel navigation
 // ══════════════════════════════════════════════════════
 function hideAuthPanels() {
-  ['social-login-panel','email-login-panel','email-signup-panel','finish-profile-panel'].forEach(id => {
+  ['auth-home-panel','email-login-panel','email-signup-panel','finish-profile-panel'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 }
-function showSocialLogin() {
+function showAuthHome() {
   hideAuthPanels();
-  document.getElementById('social-login-panel').style.display = 'block';
+  document.getElementById('auth-home-panel').style.display = 'block';
   document.getElementById('email-login-panel').style.display = 'none';
   document.getElementById('email-signup-panel').style.display = 'none';
 }
 function showEmailLogin() {
   hideAuthPanels();
-  document.getElementById('social-login-panel').style.display = 'none';
+  document.getElementById('auth-home-panel').style.display = 'none';
   document.getElementById('email-login-panel').style.display = 'block';
   document.getElementById('email-signup-panel').style.display = 'none';
 }
 function showEmailSignup() {
   hideAuthPanels();
   refreshInviteFields();
-  document.getElementById('social-login-panel').style.display = 'none';
+  document.getElementById('auth-home-panel').style.display = 'none';
   document.getElementById('email-login-panel').style.display = 'none';
   document.getElementById('email-signup-panel').style.display = 'block';
-}
-
-async function socialLogin(service) {
-  const providers = { spotify: 'spotify', apple: 'apple', soundcloud: null };
-  // Supabase OAuth — in production this triggers real OAuth redirect
-  // For now we show a friendly message and fall back to email signup
-  // Once you enable the provider in Supabase Auth settings it works automatically
-  const btn = event.target.closest('button');
-  const origText = btn.innerHTML;
-  btn.innerHTML = '⏳ Connecting...';
-  btn.disabled = true;
-
-  if (service === 'soundcloud') {
-    // SoundCloud not yet in Supabase OAuth — use email flow but flag the service
-    setTimeout(()=>{
-      btn.innerHTML = origText;
-      btn.disabled = false;
-      showEmailSignup();
-      // Store intent so we auto-connect SoundCloud after signup
-      sessionStorage.setItem('pendingMusicConnect', 'soundcloud');
-    }, 800);
-    return;
-  }
-
-  if (typeof track === 'function') track('login_start', { method: service });
-  const providerMap = { spotify: 'spotify', apple: 'apple' };
-  const provider = providerMap[service];
-
-  const { data, error } = await sb.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: (window.tenantRedirectUrl && window.tenantRedirectUrl()) || (location.origin + location.pathname) }
-  });
-
-  if (error) {
-    btn.innerHTML = origText;
-    btn.disabled = false;
-    // Provider not enabled in Supabase yet — fall back gracefully
-    showEmailSignup();
-    sessionStorage.setItem('pendingMusicConnect', service);
-  }
 }
 
 async function doLogin() {
@@ -972,7 +851,7 @@ async function doLogout() {
   await sb.auth.signOut();
   currentUser = null; currentRep = null;
   showScreen('login');
-  showSocialLogin();
+  showAuthHome();
 }
 
 // ══════════════════════════════════════════════════════
@@ -980,8 +859,7 @@ async function doLogout() {
 // ══════════════════════════════════════════════════════
 // Returns true when this user has a rep profile on THIS team. Otherwise shows
 // the Finish profile panel (promo code + terms + invite where required) and
-// returns false. No profile is created without those steps, including after
-// Spotify or Apple sign-in.
+// returns false. No profile is created without those steps.
 async function loadRep() {
   const { data } = await scope(sb.from('reps').select('*').eq('user_id', currentUser.id))
     .order('created_at', { ascending: true }).limit(1).maybeSingle();
@@ -1005,7 +883,11 @@ function showFinishProfile() {
   showScreen('login');
   hideAuthPanels();
   document.getElementById('finish-profile-panel').style.display = 'block';
-  document.getElementById('finish-email').textContent = (currentUser && currentUser.email) || 'your account';
+  const introEl = document.getElementById('finish-intro');
+  if (introEl) {
+    const who = currentUser && currentUser.email;
+    introEl.textContent = (who ? "You're signed in as " + who + '. ' : "You're signed in. ") + 'Pick your promo code to join this team.';
+  }
   const codeEl = document.getElementById('finish-code');
   if (codeEl && !codeEl.value) codeEl.value = suggestPromo();
   document.getElementById('finish-tos').checked = false;
@@ -1016,7 +898,7 @@ async function finishProfile() {
   const btn = document.getElementById('finish-btn');
   const err = document.getElementById('finish-error');
   err.style.display = 'none';
-  if (!currentUser) { showSocialLogin(); return; }
+  if (!currentUser) { showAuthHome(); return; }
   const code = normalizePromo(document.getElementById('finish-code').value);
   if (code.length < 3 || code.length > 16) {
     err.textContent = 'Promo code must be 3 to 16 letters or numbers (no spaces).'; err.style.display = 'block'; return;
@@ -1039,18 +921,14 @@ async function finishProfile() {
     promo_code: code,
     rank: 'Recruit',
     lifetime_points: 0,
-    spotify_connected: provider === 'spotify',
-    apple_connected: provider === 'apple',
     terms_accepted_at: new Date().toISOString(),
     invite_code: inv.invite
   }));
   btn.disabled = false; btn.textContent = 'Join the team';
   if (error) { err.textContent = friendlyRepError(error); err.style.display = 'block'; return; }
   if (typeof track === 'function') track('signup_success', { method: provider || 'email' });
-  if (provider === 'spotify' || provider === 'apple') musicConnected[provider] = true;
   if (!(await loadRep())) return;
   showScreen('app');
-  initMusicState();
 }
 
 function renderHeader() {
@@ -1126,18 +1004,24 @@ function renderPointValues(rules) {
     const cash = MILESTONE_CASH[m.tickets];
     rows.push([`${fmt(m.tickets)} tickets for one show`, `+${fmt(m.points)} pts${cash ? ' + $' + cash : ''}`, cash ? 'b-gold' : 'b-cyan']);
   });
-  if (!rows.length) return;
+  if (!rows.length) { pointValuesUnavailable(); return; }
   el.innerHTML = rows.map(([label, val, cls]) => `<div class="pv-row"><span>${esc(label)}</span><span class="badge ${cls}">${esc(val)}</span></div>`).join('');
+}
+// If point values can't load, replace the skeleton rows with a plain message.
+function pointValuesUnavailable() {
+  const el = document.getElementById('point-values');
+  if (el && el.querySelector('.skel')) el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0;">Point values are not available right now.</div>';
 }
 async function loadGamification() {
   try {
     const { data, error } = await sb.rpc('gamification_my_progress', { p_tenant: TENANT_SLUG });
     if (error) throw error;
-    if (!data) return;
+    if (!data) { pointValuesUnavailable(); return; }
     gamState = data;
     renderGamification(data);
   } catch (e) {
     console.warn('gamification unavailable, using legacy rank card', e);
+    pointValuesUnavailable();
   }
 }
 
@@ -1210,6 +1094,7 @@ function renderRankCard() {
 let teamRates = null;
 async function renderRateLabel(rank) {
   const el = document.getElementById('rate-label');
+  const desc = document.getElementById('rate-desc');
   if (!el) return;
   if (!teamRates) {
     try {
@@ -1217,8 +1102,14 @@ async function renderRateLabel(rank) {
       if (!error && data) teamRates = data;
     } catch (_) { /* ignore */ }
   }
-  if (!teamRates) { el.textContent = rank + ' rank'; return; }
+  // Only fill the row once real data is in; never show a half-built sentence.
+  if (!teamRates) {
+    if (desc) desc.textContent = 'Each use earns points and cash';
+    el.textContent = rank + ' rank';
+    return;
+  }
   const r = Number(teamRates[rank] ?? teamRates.Recruit ?? 0);
+  if (desc) desc.textContent = 'Each use earns points and cash';
   el.textContent = '$' + r.toFixed(2) + ' / code at ' + rank + ' rank';
 }
 
@@ -1448,62 +1339,6 @@ async function loadSubmissions() {
 }
 
 // ══════════════════════════════════════════════════════
-// MUSIC
-// ══════════════════════════════════════════════════════
-async function connectMusic(service) {
-  musicConnected[service] = true;
-  const update = {};
-  update[service+'_connected'] = true;
-  await sb.from('reps').update(update).eq('id', currentRep.id);
-  currentRep[service+'_connected'] = true;
-  renderMusicConnected();
-}
-
-function renderMusicConnected() {
-  const anyConnected = Object.values(musicConnected).some(v=>v);
-  document.getElementById('music-disconnected').style.display = anyConnected ? 'none' : 'block';
-  document.getElementById('music-connected').style.display = anyConnected ? 'block' : 'none';
-  if (!anyConnected) return;
-  const services = {spotify:{label:'Spotify',bg:'#1DB954',icon:'🎵',meta:'Top tracks synced'},apple:{label:'Apple Music',bg:'#fc3c44',icon:'🎵',meta:'Library synced'},youtube:{label:'YouTube Music',bg:'#FF0000',icon:'▶',meta:'Likes & history synced'},soundcloud:{label:'SoundCloud',bg:'#ff5500',icon:'☁️',meta:'Liked tracks synced'}};
-  document.getElementById('connected-accounts').innerHTML = Object.entries(musicConnected).filter(([,v])=>v).map(([k])=>{
-    const s = services[k];
-    return `<div class="account-row"><div style="width:32px;height:32px;border-radius:6px;background:${s.bg};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${s.icon}</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${s.label}</div><div style="font-size:11px;color:var(--muted);margin-top:1px;">${s.meta}</div></div><button class="account-disconnect" onclick="disconnectMusic('${k}')">Disconnect</button></div>`;
-  }).join('');
-  const tasteTags = ['House','Techno','Deep House','Melodic','Progressive'];
-  document.getElementById('taste-tags').innerHTML = tasteTags.map(t=>`<span class="badge b-cyan">${t}</span>`).join('');
-  document.getElementById('taste-bars').innerHTML = ['Energy','Danceability','Bass weight','Tempo avg'].map((l,i)=>{
-    const pct = [84,90,72,78][i];
-    return `<div><div class="taste-bar-label"><span style="font-size:12px;">${l}</span><span style="font-size:12px;color:var(--cyan);font-family:var(--font-head);font-weight:700;">${pct}%</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;"></div></div></div>`;
-  }).join('');
-}
-
-async function disconnectMusic(service) {
-  delete musicConnected[service];
-  const update = {}; update[service+'_connected'] = false;
-  await sb.from('reps').update(update).eq('id', currentRep.id);
-  renderMusicConnected();
-}
-
-async function shareMix(btn) {
-  if (!currentRep) return;
-  const url = (prompt('Paste the link to your post sharing this week\'s mix. Points land once a coordinator approves it.') || '').trim();
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url)) { alert('Please paste a full link starting with http:// or https://'); return; }
-  const host = (()=>{ try { return new URL(url).hostname.toLowerCase(); } catch(e) { return ''; } })();
-  const platform = /instagram/.test(host) ? 'instagram' : /tiktok/.test(host) ? 'tiktok' : /facebook|fb\./.test(host) ? 'facebook' : /youtu/.test(host) ? 'youtube' : /twitter|x\.com/.test(host) ? 'twitter' : 'other';
-  btn.disabled = true;
-  const { error } = await sb.from('content_submissions').insert(stamped({
-    rep_id: currentRep.id, event_id: null, platform, content_type: 'flyer_share', url, status: 'pending'
-  }));
-  if (error) { btn.disabled = false; alert('Submission failed. Try again.'); return; }
-  btn.textContent = '✓ Submitted. +50 pts once approved';
-  btn.style.background = 'var(--gold-dim)';
-  btn.style.borderColor = 'rgba(234,179,8,0.3)';
-  btn.style.color = 'var(--gold)';
-  loadSubmissions();
-}
-
-// ══════════════════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════════════════
 function showScreen(id) {
@@ -1513,13 +1348,15 @@ function showScreen(id) {
 }
 
 function showView(id) {
-  if (id === 'music' && !mixEnabled()) id = 'home';
+  if (id === 'rewards' && !rewardsEnabled()) id = 'home';
+  const target = document.getElementById('view-' + id);
+  if (!target) id = 'home';
   if (typeof track === 'function') track('view_change', { view: id });
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
-  const idx = ['home','events','leaderboard','submit','music','rewards'].indexOf(id);
-  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  const btn = document.querySelector('.nav-btn[data-view="' + id + '"]');
+  if (btn) btn.classList.add('active');
 }
 
 function copyCode() {
@@ -1529,13 +1366,6 @@ function copyCode() {
     btn.textContent = '✓ Copied!';
     setTimeout(()=>btn.textContent='Copy code', 2000);
   }
-}
-
-// Check music connections from DB on load
-function initMusicState() {
-  if (!currentRep) return;
-  ['spotify','apple','youtube','soundcloud'].forEach(s=>{ if(currentRep[s+'_connected']) musicConnected[s]=true; });
-  if (Object.values(musicConnected).some(v=>v)) renderMusicConnected();
 }
 
 // ══════════════════════════════════════════════════════

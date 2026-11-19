@@ -375,6 +375,9 @@
       box-shadow: var(--shadow), 0 0 0 1px var(--line);
     }
     .feature-visual.shot img { object-fit: cover; }
+    [data-feature][hidden] { display: none !important; }
+    .feature.solo { grid-template-columns: 1fr; }
+    .feature.solo .feature-copy { max-width: 42rem; }
     .coming {
       display: inline-block;
       margin-top: 0.85rem;
@@ -506,6 +509,8 @@
         padding: 2.7rem 0;
       }
       .feature.reverse { grid-template-columns: 1.15fr 1fr; }
+      [data-feature][hidden] { display: none !important; }
+    .feature.solo { grid-template-columns: 1fr; }
       .feature.reverse .feature-copy { order: 2; }
       .feature.reverse .feature-visual { order: 1; }
     }
@@ -584,7 +589,7 @@
           </video>
           <button type="button" class="unmute" id="unmute" hidden>Sound on</button>
         </div>
-        <p class="works-with">Works with <span class="live">Eventbrite</span> <span class="live-mark">Live</span>. Posh, Tixr, DICE and more coming soon.</p>
+        <p class="works-with">Works with <span class="live">Eventbrite</span> <span class="live-mark">Live</span>.</p>
       </div>
     </section>
 
@@ -646,7 +651,7 @@
             <p class="eyebrow">Automatic sales credit</p>
             <h2>Every sale <em>credited.</em> Automatically.</h2>
             <p>Eventbrite orders that use a rep's promo code land on the right rep.</p>
-            <p class="works-with">Works with <span class="live">Eventbrite</span> <span class="live-mark">Live</span>. Posh, Tixr, DICE and more coming soon.</p>
+            <p class="works-with">Works with <span class="live">Eventbrite</span> <span class="live-mark">Live</span>.</p>
           </div>
           <div class="feature-visual">
             <img src="/assets/features/sales.webp" width="780" height="980" alt="A ticket order using a rep promo code is credited to that rep, with tickets and points updating automatically." />
@@ -686,14 +691,14 @@
           </div>
         </article>
 
-        <article class="feature reverse">
+        <article class="feature reverse solo" id="feature-works-everywhere">
           <div class="feature-copy">
             <p class="eyebrow">Works everywhere</p>
             <h2>Runs in the browser. <em>Nothing to install.</em></h2>
             <p>Your team can sign in from a phone or a laptop and get to work.</p>
-            <span class="coming">Rewards store coming soon</span>
+            <span class="coming" data-feature="rewardsStore" hidden>Rewards store coming soon</span>
           </div>
-          <div class="feature-visual shot">
+          <div class="feature-visual shot" data-feature="rewardsStore" hidden>
             <img src="/assets/features/rewards.webp" width="1400" height="875" alt="Rewards store marked coming soon, with a preview of crew merch and guest list perks. Sample data." />
           </div>
         </article>
@@ -740,7 +745,7 @@
                   <option value="1-10">1 to 10</option>
                   <option value="11-25">11 to 25</option>
                   <option value="26-50">26 to 50</option>
-                  <option value="51-100">51 to 100</option>
+                  <option value="51-100">51 to 99</option>
                   <option value="100+">100 or more</option>
                 </select>
               </label>
@@ -782,6 +787,19 @@
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
         else fn();
       }
+
+      // Feature flags for this page. Anything marked data-feature="name" stays hidden unless the flag is true.
+      var FEATURES = { rewardsStore: false };
+      onReady(function () {
+        var gated = document.querySelectorAll('[data-feature]');
+        for (var i = 0; i < gated.length; i++) {
+          if (FEATURES[gated[i].getAttribute('data-feature')] === true) gated[i].hidden = false;
+        }
+        if (FEATURES.rewardsStore === true) {
+          var solo = document.getElementById('feature-works-everywhere');
+          if (solo) solo.classList.remove('solo');
+        }
+      });
 
       onReady(function () {
         var toggle = document.getElementById('team-toggle');
