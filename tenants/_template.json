@@ -13,7 +13,8 @@
   "supabaseUrl": "https://khisgmozkufnzapmldgc.supabase.co",
   "supabaseAnonKey": "REPLACE_WITH_SAME_ANON_KEY_AS_submerged.json",
   "featureFlags": {
-    "weeklyMix": true,
+    "socialLogin": false,
+    "rewardsStore": false,
     "points": true
   },
   "copy": {

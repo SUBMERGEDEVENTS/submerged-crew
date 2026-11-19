@@ -9,15 +9,15 @@
     supabaseUrl: 'https://khisgmozkufnzapmldgc.supabase.co',
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaXNnbW96a3VmbnphcG1sZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDY3NDIsImV4cCI6MjA5MTE4Mjc0Mn0.GUweJMnLLDh2bwE0NADb55GM7mTGFCTO8bNgysD5y9c',
     featureFlags: {
-      socialLogin: true,
-      musicMix: false,
+      socialLogin: false,
+      rewardsStore: false,
       adminAi: false,
       leaderboard: true
     },
     copy: {
       tagline: 'Street Team Portal',
       adminTagline: 'Admin Dashboard',
-      consentNote: 'By continuing you agree to let this program read your music taste data to personalize your experience. We never post on your behalf.'
+      consentNote: 'By continuing you agree to the Woosah Terms of Use. We never post on your behalf.'
     }
   };
 
@@ -124,13 +124,6 @@
     });
     document.querySelectorAll('[data-tenant-consent]').forEach(function (el) {
       if (tenant.copy && tenant.copy.consentNote) el.textContent = tenant.copy.consentNote;
-    });
-    document.querySelectorAll('[data-tenant-mix]').forEach(function (el) {
-      el.textContent = tenant.name + ' Weekly Mix';
-    });
-    document.querySelectorAll('[data-tenant-mix-vol]').forEach(function (el) {
-      var vol = el.getAttribute('data-tenant-mix-vol') || '12';
-      el.textContent = tenant.name + ' Vol. ' + vol;
     });
   }
 

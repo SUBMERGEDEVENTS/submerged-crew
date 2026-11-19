@@ -1,6 +1,6 @@
 # submerged-crew
 
-Woosah is a multi-tenant street-team portal. Reps track promo codes, events, leaderboards, and music-mix missions; coordinators use the admin dashboard.
+Woosah is a multi-tenant street-team portal. Reps track promo codes, events, and leaderboards; coordinators use the admin dashboard.
 
 ## Phase 1 — product foundation
 
@@ -90,4 +90,4 @@ Static deploys respect [.assetsignore](.assetsignore) so `.git` and other junk a
 
 
 ## Gamification
-Points, tiers, badges, leaderboards and the Rewards store placeholder: see [docs/GAMIFICATION.md](docs/GAMIFICATION.md).
+Points, tiers, badges, leaderboards and the Rewards store placeholder (hidden behind the `rewardsStore` feature flag, off by default): see [docs/GAMIFICATION.md](docs/GAMIFICATION.md).
