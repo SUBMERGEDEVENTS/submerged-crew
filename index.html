@@ -281,8 +281,31 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <label class="field-label">Password</label>
         <input class="field-input" id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
         <button class="auth-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+        <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;"><span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="showForgotPassword()">Forgot password?</span></div>
         <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;">New rep? <span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="showEmailSignup()">Create account →</span></div>
         <div class="auth-error" id="login-error"></div>
+      </div>
+
+      <!-- FORGOT PASSWORD: hidden by default -->
+      <div id="forgot-panel" style="display:none;">
+        <button onclick="showEmailLogin()" style="background:transparent;border:none;color:var(--cyan);font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:1rem;padding:0;letter-spacing:0.04em;">← Back</button>
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:1rem;">Reset your password</div>
+        <label class="field-label">Email</label>
+        <input class="field-input" id="forgot-email" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendPasswordReset()" />
+        <button class="auth-btn" id="forgot-btn" onclick="sendPasswordReset()">Email me a reset link</button>
+        <div id="forgot-msg" style="display:none;font-size:13px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.5;"></div>
+        <div class="auth-error" id="forgot-error"></div>
+      </div>
+
+      <!-- SET NEW PASSWORD: shown after opening a reset link -->
+      <div id="reset-panel" style="display:none;">
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text);margin-bottom:1rem;">Choose a new password</div>
+        <label class="field-label">New password</label>
+        <input class="field-input" id="reset-pass" type="password" placeholder="Min 6 characters" />
+        <label class="field-label">Confirm new password</label>
+        <input class="field-input" id="reset-pass2" type="password" placeholder="Type it again" onkeydown="if(event.key==='Enter')saveNewPassword()" />
+        <button class="auth-btn" id="reset-btn" onclick="saveNewPassword()">Save password</button>
+        <div class="auth-error" id="reset-error"></div>
       </div>
 
       <!-- EMAIL SIGNUP — hidden by default -->
@@ -418,11 +441,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
 
         <div class="card cyan-l">
           <div class="card-title">Your promo code</div>
-          <div id="promo-edit-wrap" style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <input class="field-input" id="promo-edit" type="text" maxlength="16" placeholder="Change code" style="text-transform:uppercase;flex:1;min-width:120px;margin:0;" />
-            <button class="auth-btn" type="button" style="width:auto;padding:10px 14px;margin:0;" onclick="updateMyPromo()">Update</button>
-          </div>
-          <div class="auth-error" id="promo-edit-err" style="display:none;margin-top:8px;"></div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted);line-height:1.5;">Need a different code? Ask your team admin, so it matches the code on the ticket site.</div>
 
           <div class="code-display">
             <div class="code-label">Share this to earn</div>
@@ -574,6 +593,10 @@ function initSupabase() {
   if (typeof track === 'function') track('app_boot', { page: 'portal' });
   captureInviteFromUrl();
   applyFeatureFlags();
+  if (/(^|[#&?])type=recovery(&|$)/.test(location.hash + '&' + location.search)) window.__pwRecovery = true;
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') { window.__pwRecovery = true; showScreen('login'); showResetPanel(); }
+  });
   boot();
 }
 
@@ -659,6 +682,7 @@ let allEvents = [];
 async function boot() {
   try {
     const { data: { session } } = await sb.auth.getSession();
+    if (window.__pwRecovery) { showScreen('login'); showResetPanel(); return; }
     if (session) {
       currentUser = session.user;
       if (!(await loadRep())) return;
@@ -686,7 +710,7 @@ async function boot() {
 // AUTH — social login panel navigation
 // ══════════════════════════════════════════════════════
 function hideAuthPanels() {
-  ['auth-home-panel','email-login-panel','email-signup-panel','finish-profile-panel'].forEach(id => {
+  ['auth-home-panel','email-login-panel','email-signup-panel','finish-profile-panel','forgot-panel','reset-panel'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 }
@@ -728,6 +752,63 @@ async function doLogin() {
   if (typeof track === 'function') track('login_success', { method: 'email' });
   currentUser = data.user;
   btn.disabled = false; btn.textContent = 'Sign In';
+  if (!(await loadRep())) return;
+  showScreen('app');
+}
+
+// ══════════════════════════════════════════════════════
+// PASSWORD RESET
+// ══════════════════════════════════════════════════════
+function showForgotPassword() {
+  hideAuthPanels();
+  const le = document.getElementById('login-email');
+  const fe = document.getElementById('forgot-email');
+  if (le && fe && !fe.value) fe.value = le.value.trim();
+  document.getElementById('forgot-msg').style.display = 'none';
+  document.getElementById('forgot-error').style.display = 'none';
+  document.getElementById('forgot-panel').style.display = 'block';
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const btn = document.getElementById('forgot-btn');
+  const err = document.getElementById('forgot-error');
+  const msg = document.getElementById('forgot-msg');
+  err.style.display = 'none'; msg.style.display = 'none';
+  if (!email) { err.textContent = 'Enter the email you signed up with.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Sending...';
+  if (typeof track === 'function') track('password_reset_request', {});
+  const redirectTo = (window.tenantRedirectUrl && window.tenantRedirectUrl()) || (location.origin + location.pathname);
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+  btn.disabled = false; btn.textContent = 'Email me a reset link';
+  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  // Same message whether or not the email has an account.
+  msg.textContent = 'If that email has an account, a reset link is on its way. Open it on this device.';
+  msg.style.display = 'block';
+}
+
+function showResetPanel() {
+  hideAuthPanels();
+  document.getElementById('reset-error').style.display = 'none';
+  document.getElementById('reset-panel').style.display = 'block';
+}
+
+async function saveNewPassword() {
+  const p1 = document.getElementById('reset-pass').value;
+  const p2 = document.getElementById('reset-pass2').value;
+  const btn = document.getElementById('reset-btn');
+  const err = document.getElementById('reset-error');
+  err.style.display = 'none';
+  if (p1.length < 6) { err.textContent = 'Use at least 6 characters.'; err.style.display = 'block'; return; }
+  if (p1 !== p2) { err.textContent = 'The two passwords do not match.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { data, error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false; btn.textContent = 'Save password';
+  if (error) { err.textContent = error.message + ' Request a new reset link if this one expired.'; err.style.display = 'block'; return; }
+  if (typeof track === 'function') track('password_reset_success', {});
+  window.__pwRecovery = false;
+  window.history.replaceState({}, document.title, window.location.pathname);
+  currentUser = data.user;
   if (!(await loadRep())) return;
   showScreen('app');
 }
@@ -815,36 +896,6 @@ async function isPromoAvailable(code) {
 
 function normalizePromo(raw) {
   return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
-}
-
-async function savePromoCode(raw) {
-  const code = normalizePromo(raw);
-  if (code.length < 3 || code.length > 16) return { error: 'Promo code must be 3 to 16 letters or numbers.' };
-  if (!currentRep) return { error: 'Not signed in as a rep.' };
-  if (code === currentRep.promo_code) return { error: null };
-  const available = await isPromoAvailable(code);
-  if (available === false) return { error: 'That promo code is already taken.' };
-  const { error } = await sb.from('reps').update({ promo_code: code }).eq('id', currentRep.id);
-  if (error) return { error: error.message };
-  currentRep.promo_code = code;
-  const el = document.getElementById('my-code');
-  if (el) el.textContent = code;
-  return { error: null };
-}
-
-
-async function updateMyPromo() {
-  const err = document.getElementById('promo-edit-err');
-  const input = document.getElementById('promo-edit');
-  if (err) err.style.display = 'none';
-  const { error } = await savePromoCode(input.value);
-  if (error) {
-    if (err) { err.textContent = error; err.style.display = 'block'; }
-    return;
-  }
-  input.value = '';
-  if (err) { err.textContent = ''; err.style.display = 'none'; }
-  alert('Promo code updated. Make sure Eventbrite uses the same code.');
 }
 
 async function doLogout() {

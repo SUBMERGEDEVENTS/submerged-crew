@@ -68,7 +68,6 @@ See `docs/EVENTS.md` and `docs/product_events.sql`. Client helper: `js/analytics
 
 ## Deprecated
 
-`test.html` is **deprecated** legacy scratch UI. Left in the repo for reference; do not link it from production nav.
 
 ## Stack
 

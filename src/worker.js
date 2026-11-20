@@ -117,8 +117,7 @@ function isStaticAssetPath(pathname) {
     p === '/terms.html' ||
     p === '/terms' ||
     p === '/landing.html' ||
-    p === '/not-found.html' ||
-    p === '/test.html'
+    p === '/not-found.html'
   ) {
     return true;
   }
