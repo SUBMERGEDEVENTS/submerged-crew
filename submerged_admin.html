@@ -190,7 +190,18 @@ textarea.form-input{resize:vertical;min-height:60px;font-family:var(--font-body)
       <input class="field-input" id="admin-email" type="email" placeholder="your@email.com" />
       <label class="field-label">Password</label>
       <input class="field-input" id="admin-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()" />
+      <div id="admin-login-fields">
       <button class="auth-btn" onclick="adminLogin()">Sign In</button>
+      <div style="font-size:12px;text-align:center;margin-top:10px;"><span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="adminForgotPassword()">Forgot password?</span></div>
+      <div id="admin-forgot-msg" style="display:none;font-size:13px;text-align:center;margin-top:12px;line-height:1.5;opacity:0.8;"></div>
+      </div>
+      <div id="admin-reset-fields" style="display:none;">
+        <label class="field-label">New password</label>
+        <input class="field-input" id="admin-reset-pass" type="password" placeholder="Min 6 characters" />
+        <label class="field-label">Confirm new password</label>
+        <input class="field-input" id="admin-reset-pass2" type="password" placeholder="Type it again" onkeydown="if(event.key==='Enter')adminSaveNewPassword()" />
+        <button class="auth-btn" onclick="adminSaveNewPassword()">Save password</button>
+      </div>
       <div class="err" id="login-err"></div>
     </div>
   </div>
@@ -612,7 +623,12 @@ window.addEventListener('load', () => {
     window.sb = sb;
     if (typeof analyticsReady === 'function') analyticsReady();
     if (typeof track === 'function') track('app_boot', { page: 'admin' });
+    if (/(^|[#&?])type=recovery(&|$)/.test(location.hash + '&' + location.search)) window.__pwRecovery = true;
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') { window.__pwRecovery = true; showAdminReset(); }
+    });
     const { data: { session } } = await sb.auth.getSession();
+    if (window.__pwRecovery) { showAdminReset(); return; }
     if (session) { if (await requireAdmin(session.user)) { currentAdmin = session.user; showApp(); } }
     else showScreen('login');
   }, 200);
@@ -629,6 +645,45 @@ async function adminLogin() {
   if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
   if (!(await requireAdmin(data.user))) return;
   if (typeof track === 'function') track('admin_login_success', {});
+  currentAdmin = data.user;
+  showApp();
+}
+
+// ── PASSWORD RESET ──
+async function adminForgotPassword() {
+  const email = document.getElementById('admin-email').value.trim();
+  const err = document.getElementById('login-err');
+  const msg = document.getElementById('admin-forgot-msg');
+  err.style.display = 'none'; msg.style.display = 'none';
+  if (!email) { err.textContent = 'Type your email above, then tap Forgot password.'; err.style.display = 'block'; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  msg.textContent = 'If that email has an account, a reset link is on its way. Open it on this device.';
+  msg.style.display = 'block';
+}
+
+function showAdminReset() {
+  showScreen('login');
+  document.getElementById('admin-login-fields').style.display = 'none';
+  document.querySelectorAll('#admin-pass, #admin-email').forEach(el => {
+    el.style.display = 'none';
+    const lbl = el.previousElementSibling; if (lbl && lbl.classList.contains('field-label')) lbl.style.display = 'none';
+  });
+  document.getElementById('admin-reset-fields').style.display = 'block';
+}
+
+async function adminSaveNewPassword() {
+  const p1 = document.getElementById('admin-reset-pass').value;
+  const p2 = document.getElementById('admin-reset-pass2').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (p1.length < 6) { err.textContent = 'Use at least 6 characters.'; err.style.display = 'block'; return; }
+  if (p1 !== p2) { err.textContent = 'The two passwords do not match.'; err.style.display = 'block'; return; }
+  const { data, error } = await sb.auth.updateUser({ password: p1 });
+  if (error) { err.textContent = error.message + ' Request a new reset link if this one expired.'; err.style.display = 'block'; return; }
+  window.__pwRecovery = false;
+  window.history.replaceState({}, document.title, window.location.pathname);
+  if (!(await requireAdmin(data.user))) return;
   currentAdmin = data.user;
   showApp();
 }
