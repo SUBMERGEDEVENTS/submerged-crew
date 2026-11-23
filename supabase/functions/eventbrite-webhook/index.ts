@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: 'event_not_found', eventbrite_event_id: eventbriteEventId }, 200);
     }
 
-    const cashRate = getCashRate(rep.rank, payRates);
+    const cashRate = eventFlatRate(event) ?? getCashRate(rep.rank, payRates);
     const cashEarned = cashRate * ticketQuantity;
     const pointsEarned = 20 * ticketQuantity;
 
@@ -395,6 +395,14 @@ function getCashRate(rank: string, rates: Record<string, number> | null): number
   const table = rates && typeof rates === 'object' ? rates : DEFAULT_RATES;
   const r = Number(table[rank] ?? table['Recruit'] ?? DEFAULT_RATES[rank] ?? 2.0);
   return Number.isFinite(r) && r >= 0 ? r : 2.0;
+}
+
+// events.flat_rate, when set, pays every rep the same per ticket for that event.
+function eventFlatRate(event: { flat_rate?: unknown } | null): number | null {
+  const v = event?.flat_rate;
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 function json(data: unknown, status: number) {

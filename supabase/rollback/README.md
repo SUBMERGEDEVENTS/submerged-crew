@@ -24,3 +24,7 @@ commented block at the bottom deletes them. Delete no rows unless you mean to.
 `20261120_before_lock_rep_pay_fields.sql` removes the triggers and functions added by
 `20261120120000_lock_rep_pay_fields.sql`. It deletes no rows. Restore the portal's
 "change code" box with it if reps should edit their own promo code again.
+
+`20261123_before_event_flat_rate.sql` drops `events.flat_rate` and its check,
+added by `20261123160000_event_flat_rate.sql`. Any per-event flat rates are
+lost; cash already credited to reps is not changed.
