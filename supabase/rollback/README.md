@@ -20,3 +20,7 @@ by `20261113200000_team_eventbrite_payouts_rates.sql`. It deletes no rows.
 `20261119_before_ig_comment_picker.sql` removes the functions, policies and trigger added by
 `20261119120000_ig_comment_picker.sql`. It keeps the draw history and stored connection by default; a
 commented block at the bottom deletes them. Delete no rows unless you mean to.
+
+`20261120_before_lock_rep_pay_fields.sql` removes the triggers and functions added by
+`20261120120000_lock_rep_pay_fields.sql`. It deletes no rows. Restore the portal's
+"change code" box with it if reps should edit their own promo code again.
