@@ -28,3 +28,8 @@ commented block at the bottom deletes them. Delete no rows unless you mean to.
 `20261123_before_event_flat_rate.sql` drops `events.flat_rate` and its check,
 added by `20261123160000_event_flat_rate.sql`. Any per-event flat rates are
 lost; cash already credited to reps is not changed.
+
+`20261124_before_partner_code_claims.sql` removes the partner code table, triggers and
+RPCs added by `20261124120000_partner_code_claims.sql`, and restores
+`promo_code_available`. Claims and approvals are lost; reps and their Woosah promo
+codes are not changed. Deploy the previous front end with it.

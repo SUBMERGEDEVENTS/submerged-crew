@@ -317,6 +317,11 @@ textarea.form-input{resize:vertical;min-height:60px;font-family:var(--font-body)
           <div id="inv-err" style="display:none;margin-top:8px;color:#ef4444;font-size:12px;"></div>
           <div id="invites-list" style="margin-top:12px;"></div>
         </div>
+        <div class="card" id="partner-codes-card" style="display:none;">
+          <div class="card-title">Team codes</div>
+          <div class="section-sub">Codes a partner gave your team, for a show sold on another ticket site. Reps claim one when they sign up or from their portal, and a claim counts once you approve it. Copy a code's link to send a rep straight to signup with it filled in.</div>
+          <div id="partner-codes-body"></div>
+        </div>
         <div class="card">
           <div class="card-title">All reps</div>
           <div style="overflow-x:auto;">
@@ -761,6 +766,7 @@ async function loadAllData() {
   await loadPayRates();
   populateEventSelects();
   loadInvites();
+  loadPartnerCodes();
   loadEventbrite();
   loadOverview();
   renderPointsLeaderboard();
@@ -1299,6 +1305,55 @@ async function revokeInvite(id) {
 }
 function copyInvite(code, btn) {
   navigator.clipboard.writeText(inviteLink(code)).catch(() => {});
+  if (btn) { const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1500); }
+}
+
+// ── TEAM CODES (partner codes reps claim, e.g. AXS codes) ──
+function partnerLink(code) {
+  return location.origin + '/' + encodeURIComponent(tenantSlug()) + '?code=' + encodeURIComponent(code);
+}
+async function loadPartnerCodes() {
+  const card = document.getElementById('partner-codes-card');
+  const body = document.getElementById('partner-codes-body');
+  if (!card || !body) return;
+  let res;
+  try { res = await sb.rpc('admin_partner_codes', { p_tenant: tenantSlug() }); } catch (_) { res = { error: true }; }
+  const rows = (!res.error && Array.isArray(res.data)) ? res.data : [];
+  if (!rows.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const batches = [...new Set(rows.map(r => r.batch))];
+  body.innerHTML = batches.map(batch => {
+    const list = rows.filter(r => r.batch === batch);
+    const pending = list.filter(r => r.status === 'pending');
+    const approved = list.filter(r => r.status === 'approved');
+    const open = list.filter(r => r.status === 'open');
+    const claimed = pending.concat(approved);
+    const table = claimed.length ? `<div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>Code</th><th>Rep</th><th>Woosah code</th><th>Status</th><th>Claimed</th><th>Actions</th></tr></thead>
+      <tbody>${claimed.map(r => `<tr>
+        <td><span class="badge b-cyan">${esc(r.code)}</span></td>
+        <td>${esc(r.rep_name || '')}<div style="font-size:11px;color:var(--muted);">${esc(r.rep_email || '')}</div></td>
+        <td>${esc(r.rep_promo_code || '')}</td>
+        <td><span class="badge ${r.status === 'approved' ? 'b-green' : 'b-gold'}">${r.status === 'approved' ? 'Approved' : 'Waiting'}</span></td>
+        <td>${r.claimed_at ? esc(new Date(r.claimed_at).toLocaleDateString()) : ''}</td>
+        <td>${r.status === 'pending' ? `<button class="act-btn act-approve" onclick="partnerAction('${esc(r.code)}','approve')">Approve</button>` : ''}
+            <button class="act-btn act-reject" onclick="partnerAction('${esc(r.code)}','release')">Release</button></td>
+      </tr>`).join('')}</tbody></table></div>` : '<div class="empty">No codes claimed yet.</div>';
+    const openList = open.length ? `<div style="font-size:12px;color:var(--muted);margin:10px 0 6px;">Not claimed yet (tap to copy its signup link):</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">${open.map(r => `<button class="act-btn act-cyan" title="Copy signup link" onclick="copyPartnerLink('${esc(r.code)}', this)">${esc(r.code)}</button>`).join('')}</div>` : '';
+    return `<div style="margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px;">${esc(batch)} <span style="color:var(--muted);font-weight:400;">· ${approved.length} approved · ${pending.length} waiting · ${open.length} open</span></div>
+      ${table}${openList}</div>`;
+  }).join('');
+}
+async function partnerAction(code, action) {
+  if (action === 'release' && !confirm('Release ' + code + '? The rep loses this code and someone else can claim it.')) return;
+  const { error } = await sb.rpc('admin_update_partner_code', { p_tenant: tenantSlug(), p_code: code, p_action: action });
+  if (error) { alert('Could not update ' + code + ': ' + error.message); return; }
+  loadPartnerCodes();
+}
+function copyPartnerLink(code, btn) {
+  navigator.clipboard.writeText(partnerLink(code)).catch(() => {});
   if (btn) { const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1500); }
 }
 
