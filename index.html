@@ -1199,6 +1199,14 @@ async function loadEvents() {
   populateSubmitEventSelect(events);
 }
 
+// An event with flat_rate set pays every rep the same amount per ticket.
+function flatRateLabel(ev) {
+  if (!ev || ev.flat_rate === null || ev.flat_rate === undefined || ev.flat_rate === '') return '';
+  const n = Number(ev.flat_rate);
+  if (!Number.isFinite(n) || n < 0) return '';
+  return '<div><div class="ev-stat-val">$' + n.toFixed(2) + '</div><div class="ev-stat-label">Per ticket</div></div>';
+}
+
 function renderEvents(events, joinedIds, repEvents) {
   const el = document.getElementById('events-list');
   if (!events || events.length === 0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No events yet</div>'; return; }
@@ -1226,6 +1234,7 @@ function renderEvents(events, joinedIds, repEvents) {
             <div><div class="ev-stat-val">${re?.codes_sold||0}</div><div class="ev-stat-label">Your codes</div></div>
             <div><div class="ev-stat-val">$${parseFloat(re?.cash_earned||0).toFixed(0)}</div><div class="ev-stat-label">Earned</div></div>
             <div><div class="ev-stat-val">${ev.capacity}</div><div class="ev-stat-label">Capacity</div></div>
+            ${flatRateLabel(ev)}
           </div>
           <button class="join-btn" ${joined?'disabled':''} onclick="joinEvent('${ev.id}',this)">${joined?'✓ Active':'Join campaign'}</button>
         </div>

@@ -466,6 +466,10 @@ textarea.form-input{resize:vertical;min-height:60px;font-family:var(--font-body)
               <label class="form-label">Banner emoji</label>
               <input class="form-input" id="ev-emoji" type="text" placeholder="🎵" maxlength="2" />
             </div>
+            <div class="form-group">
+              <label class="form-label">Flat pay per ticket (optional)</label>
+              <input class="form-input" id="ev-flat" type="number" min="0" max="100" step="0.01" placeholder="Leave blank to pay by rank" />
+            </div>
           </div>
           <button class="form-btn" onclick="addEvent()">Add event</button>
           <div class="err" id="ev-err"></div>
@@ -484,6 +488,7 @@ textarea.form-input{resize:vertical;min-height:60px;font-family:var(--font-body)
                   <th>Capacity</th>
                   <th>Sold</th>
                   <th>Status</th>
+                  <th>Pay</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -992,12 +997,12 @@ async function loadPayouts() {
     return;
   }
 
-  const rates = payRates;
+  const payoutEvent = allEvents.find(e => e.id === eventId);
   let grandTotal = 0;
 
   document.getElementById('payouts-table-body').innerHTML = data.map(re => {
     const rank = re.reps?.rank || 'Recruit';
-    const rate = rateFor(rank);
+    const rate = rateFor(rank, payoutEvent);
     const basePay = re.codes_sold * rate;
     const bonuses = parseFloat(re.cash_earned || 0) - basePay;
     const total = parseFloat(re.cash_earned || 0);
@@ -1043,9 +1048,18 @@ async function markAllPaid() {
 }
 
 // ── PAY RATES ──
+// An event with flat_rate set pays that amount per ticket to every rep,
+// whatever their rank. Null or missing means the team's rank rates apply.
+function eventFlatRate(ev) {
+  if (!ev || ev.flat_rate === null || ev.flat_rate === undefined || ev.flat_rate === '') return null;
+  const n = Number(ev.flat_rate);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
 const DEFAULT_RATES = { Recruit: 2, 'Rising Star': 2, Hotshot: 2.5, Closer: 3, Legend: 3 };
 let payRates = Object.assign({}, DEFAULT_RATES);
-function rateFor(rank) {
+function rateFor(rank, ev) {
+  const flat = eventFlatRate(ev);
+  if (flat !== null) return flat;
   const r = Number(payRates[rank] ?? payRates.Recruit);
   return Number.isFinite(r) ? r : 0;
 }
@@ -1124,7 +1138,7 @@ function copyWebhookUrl(btn) {
 // ── EVENTS TABLE ──
 function loadEventsTable() {
   document.getElementById('events-table-body').innerHTML = allEvents.length === 0
-    ? '<tr><td colspan="7" class="empty">No events yet</td></tr>'
+    ? '<tr><td colspan="8" class="empty">No events yet</td></tr>'
     : allEvents.map(ev => {
       const pct = Math.round((ev.tickets_sold / ev.capacity) * 100);
       return `<tr>
@@ -1134,6 +1148,7 @@ function loadEventsTable() {
         <td>${ev.capacity.toLocaleString()}</td>
         <td>${ev.tickets_sold} <span style="color:var(--muted);font-size:11px;">(${pct}%)</span></td>
         <td><span class="badge ${ev.status === 'active' ? 'b-cyan' : ev.status === 'upcoming' ? 'b-gold' : 'b-gray'}">${ev.status}</span></td>
+        <td>${eventFlatRate(ev) !== null ? '$' + eventFlatRate(ev).toFixed(2) + ' flat' : 'By rank'}</td>
         <td>
           <button class="act-btn act-cyan" onclick="setEventStatus('${ev.id}','active')">Set active</button>
           <button class="act-btn act-reject" onclick="deleteEvent('${ev.id}')">Delete</button>
@@ -1151,15 +1166,22 @@ async function addEvent() {
   const status = document.getElementById('ev-status').value;
   const ebId = document.getElementById('ev-ebid').value.trim();
   const emoji = document.getElementById('ev-emoji').value.trim() || '🎵';
+  const flatRaw = document.getElementById('ev-flat').value.trim();
   const err = document.getElementById('ev-err');
   const suc = document.getElementById('ev-suc');
   err.style.display = 'none'; suc.style.display = 'none';
   if (!name || !date || !venue || !capacity) { err.textContent = 'Please fill in all required fields.'; err.style.display = 'block'; return; }
-  const { error } = await sb.from('events').insert(stamped({ name, date, venue, city, capacity, status, banner_emoji: emoji, eventbrite_id: ebId || null, tickets_sold: 0 }));
+  const row = { name, date, venue, city, capacity, status, banner_emoji: emoji, eventbrite_id: ebId || null, tickets_sold: 0 };
+  if (flatRaw !== '') {
+    const flat = Number(flatRaw);
+    if (!Number.isFinite(flat) || flat < 0 || flat > 100) { err.textContent = 'Flat pay must be a number from 0 to 100, or blank.'; err.style.display = 'block'; return; }
+    row.flat_rate = Math.round(flat * 100) / 100;
+  }
+  const { error } = await sb.from('events').insert(stamped(row));
   if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
   suc.textContent = `${name} added successfully!`;
   suc.style.display = 'block';
-  ['ev-name', 'ev-date', 'ev-venue', 'ev-city', 'ev-capacity', 'ev-ebid'].forEach(id => document.getElementById(id).value = '');
+  ['ev-name', 'ev-date', 'ev-venue', 'ev-city', 'ev-capacity', 'ev-ebid', 'ev-flat'].forEach(id => document.getElementById(id).value = '');
   await loadAllData();
 }
 
@@ -1188,7 +1210,8 @@ async function logManualSale() {
   const rep = allReps.find(r => r.promo_code === code);
   if (!rep) { err.textContent = `No rep found with code ${code}.`; err.style.display = 'block'; return; }
 
-  const rate = rateFor(rep.rank);
+  const ev = allEvents.find(e => e.id === eventId);
+  const rate = rateFor(rep.rank, ev);
   const cash = rate * qty;
   const pts = 20 * qty;
 
