@@ -332,7 +332,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <input class="field-input" id="signup-ig" type="text" placeholder="@yourhandle" />
         <label class="field-label">Your promo code</label>
         <input class="field-input" id="signup-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
-        <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
+        <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code, or enter the code your team gave you. We’ll match it so sales credit you.</div>
         <div id="signup-invite-wrap" style="display:none;">
           <label class="field-label">Invite code</label>
           <input class="field-input" id="signup-invite" type="text" placeholder="From your team's invite link" maxlength="32" style="text-transform:uppercase;" />
@@ -353,7 +353,7 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
         <div id="finish-intro" style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.45;">Pick your promo code to join this team.</div>
         <label class="field-label">Your promo code</label>
         <input class="field-input" id="finish-code" type="text" placeholder="e.g. JAZZ12" maxlength="16" style="text-transform:uppercase;" />
-        <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code. We’ll match it in Eventbrite so sales credit you.</div>
+        <div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;">Pick a unique code, or enter the code your team gave you. We’ll match it so sales credit you.</div>
         <div id="finish-invite-wrap" style="display:none;">
           <label class="field-label">Invite code</label>
           <input class="field-input" id="finish-invite" type="text" placeholder="From your team's invite link" maxlength="32" style="text-transform:uppercase;" />
@@ -452,6 +452,11 @@ body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-h
             <span id="rate-desc"><span class="skel w-lg"></span></span>
             <span id="rate-label" style="color:var(--cyan);font-weight:600;"><span class="skel"></span></span>
           </div>
+        </div>
+
+        <div class="card cyan-l" id="partner-card" style="display:none;">
+          <div class="card-title">Team codes</div>
+          <div id="partner-body"></div>
         </div>
 
         <div class="card">
@@ -592,6 +597,7 @@ function initSupabase() {
   if (typeof analyticsReady === 'function') analyticsReady();
   if (typeof track === 'function') track('app_boot', { page: 'portal' });
   captureInviteFromUrl();
+  captureCodeFromUrl();
   applyFeatureFlags();
   if (/(^|[#&?])type=recovery(&|$)/.test(location.hash + '&' + location.search)) window.__pwRecovery = true;
   sb.auth.onAuthStateChange((event) => {
@@ -632,6 +638,20 @@ function captureInviteFromUrl() {
     if (code) localStorage.setItem(inviteKey(), code.toUpperCase().replace(/[^A-Z0-9]/g, ''));
   } catch (_) { /* ignore */ }
 }
+// A signup link can carry the rep's team code: /{team}?code=ABC123
+function codeKey() { return 'woosah_code_' + (TENANT_SLUG || ''); }
+function captureCodeFromUrl() {
+  try {
+    const code = new URLSearchParams(location.search).get('code');
+    if (code) localStorage.setItem(codeKey(), code.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16));
+  } catch (_) { /* ignore */ }
+}
+function storedCode() {
+  try { return localStorage.getItem(codeKey()) || ''; } catch (_) { return ''; }
+}
+function clearStoredCode() {
+  try { localStorage.removeItem(codeKey()); } catch (_) { /* ignore */ }
+}
 function storedInvite() {
   try { return localStorage.getItem(inviteKey()) || ''; } catch (_) { return ''; }
 }
@@ -665,6 +685,7 @@ async function checkInviteFor(inputId) {
 }
 function friendlyRepError(e) {
   const m = (e && (e.message || '')) || '';
+  if (m.includes('promo_code_claimed')) return 'That code already belongs to another rep. If it is yours, ask your team admin.';
   if (m.includes('promo_code')) return 'That promo code is already taken. Try another.';
   if (m.includes('invite_required')) return 'This team is invite-only. Enter the invite code from your invite link.';
   if (m.includes('invite_invalid')) return 'That invite code is not valid for this team, or it has expired.';
@@ -699,6 +720,7 @@ async function boot() {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       showScreen('login');
+      if (storedCode()) showEmailSignup();
     }
   } catch(err) {
     console.error('Boot error:', err);
@@ -732,6 +754,8 @@ function showEmailSignup() {
   document.getElementById('auth-home-panel').style.display = 'none';
   document.getElementById('email-login-panel').style.display = 'none';
   document.getElementById('email-signup-panel').style.display = 'block';
+  const codeEl = document.getElementById('signup-code');
+  if (codeEl && !codeEl.value && storedCode()) codeEl.value = storedCode();
 }
 
 async function doLogin() {
@@ -919,8 +943,9 @@ async function loadRep() {
     showFinishProfile();
     return false;
   }
+  clearStoredCode();
   renderHeader();
-  await Promise.all([loadStats(), loadEvents()]);
+  await Promise.all([loadStats(), loadEvents(), loadPartnerCodes()]);
   return true;
 }
 
@@ -940,7 +965,7 @@ function showFinishProfile() {
     introEl.textContent = (who ? "You're signed in as " + who + '. ' : "You're signed in. ") + 'Pick your promo code to join this team.';
   }
   const codeEl = document.getElementById('finish-code');
-  if (codeEl && !codeEl.value) codeEl.value = suggestPromo();
+  if (codeEl && !codeEl.value) codeEl.value = storedCode() || suggestPromo();
   document.getElementById('finish-tos').checked = false;
   refreshInviteFields();
 }
@@ -980,6 +1005,58 @@ async function finishProfile() {
   if (typeof track === 'function') track('signup_success', { method: provider || 'email' });
   if (!(await loadRep())) return;
   showScreen('app');
+}
+
+// ══════════════════════════════════════════════════════
+// TEAM CODES (codes a partner gave the team, e.g. for a show sold elsewhere)
+// ══════════════════════════════════════════════════════
+let partnerBatches = [];
+async function loadPartnerCodes() {
+  const card = document.getElementById('partner-card');
+  if (!card) return;
+  let res;
+  try { res = await sb.rpc('partner_code_status', { p_tenant: TENANT_SLUG }); } catch (_) { res = { error: true }; }
+  partnerBatches = (!res.error && res.data && Array.isArray(res.data.batches)) ? res.data.batches : [];
+  if (!partnerBatches.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('partner-body').innerHTML = partnerBatches.map((b, i) => {
+    if (b.code && b.status === 'approved') {
+      return `<div style="padding:6px 0;font-size:13px;line-height:1.5;">${esc(b.batch)} code: <strong>${esc(b.code)}</strong> <span style="color:var(--green);font-weight:600;">· Approved</span></div>`;
+    }
+    if (b.code) {
+      return `<div style="padding:6px 0;font-size:13px;line-height:1.5;">${esc(b.batch)} code: <strong>${esc(b.code)}</strong> <span style="color:var(--gold, #f0b429);font-weight:600;">· Waiting for approval</span>
+        <div style="font-size:12px;color:var(--muted);">Your team admin checks it's yours. Sales count once it's approved.</div></div>`;
+    }
+    return `<div style="padding:6px 0;">
+      <div style="font-size:13px;line-height:1.5;margin-bottom:6px;">Got a ${esc(b.batch)} code from your team? Claim it here.</div>
+      <div style="display:flex;gap:8px;">
+        <input class="field-input" id="partner-input-${i}" type="text" maxlength="16" placeholder="Your code" style="text-transform:uppercase;margin:0;" onkeydown="if(event.key==='Enter')claimPartnerCode(${i})" />
+        <button class="code-copy" id="partner-btn-${i}" style="margin:0;white-space:nowrap;" onclick="claimPartnerCode(${i})">Claim</button>
+      </div>
+      <div class="auth-error" id="partner-err-${i}"></div>
+    </div>`;
+  }).join('');
+}
+function partnerError(e) {
+  const m = (e && e.message) || '';
+  if (m.includes('code_not_found')) return "That code isn't on your team's list. Check the spelling with your team admin.";
+  if (m.includes('code_taken')) return 'That code already belongs to another rep. If it is yours, tell your team admin.';
+  if (m.includes('already_have_code')) return 'You already have a code for this show.';
+  return 'Could not claim the code. Try again.';
+}
+async function claimPartnerCode(i) {
+  const input = document.getElementById('partner-input-' + i);
+  const btn = document.getElementById('partner-btn-' + i);
+  const err = document.getElementById('partner-err-' + i);
+  err.style.display = 'none';
+  const code = normalizePromo(input.value);
+  if (code.length < 2) { err.textContent = 'Enter the code your team gave you.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Claiming...';
+  const { error } = await sb.rpc('claim_partner_code', { p_tenant: TENANT_SLUG, p_code: code });
+  btn.disabled = false; btn.textContent = 'Claim';
+  if (error) { err.textContent = partnerError(error); err.style.display = 'block'; return; }
+  if (typeof track === 'function') track('partner_code_claimed', {});
+  loadPartnerCodes();
 }
 
 function renderHeader() {
